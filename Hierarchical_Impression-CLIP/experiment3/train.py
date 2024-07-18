@@ -1,8 +1,3 @@
-"""
-pretrain.pyをわかりやすく書き直したもの
-分散処理のところを削除
-"""
-
 import os
 from DMH import DMH_D, DMH_BS
 from transformers import CLIPTokenizer, CLIPModel

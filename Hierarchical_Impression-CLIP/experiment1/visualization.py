@@ -23,17 +23,18 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from openTSNE import TSNE
 from sklearn.decomposition import PCA
+import pandas as pd
+import seaborn as sns
 
 
 # define constant
-# SAVE_FOLDER = "Hierarchical-CLIP/results_temp/visualization"
-# MODEL_PATH = "Hierarchical-CLIP/results_temp/model/checkpoint_0100.pth.tar"
-SAVE_FOLDER = "Hierarchical-CLIP/results/visualization"
-MODEL_PATH = "Hierarchical-CLIP/results/model/best.pth.tar"
+EXP = "experiment1"
+SAVE_FOLDER = f"Hierarchical_Impression-CLIP/{EXP}/results/visualization"
+MODEL_PATH = f"Hierarchical_Impression-CLIP/{EXP}/results/model/best.pth.tar"
 IMG_HIERARCHY_PATH = "image_clusters.npz"
 TAG_HIERARCHY_PATH = "impression_clusters.npz"
 BATCH_SIZE = 256
-DATASET = 'train'
+DATASET = 'train'   # このプログラムはtrainのみに対応
 ANNOTATE_WITH = 'tag'
 
 # 保存用フォルダの準備
@@ -55,8 +56,6 @@ emb_t.load_state_dict(params['emb_t'])
 
 # データの準備
 img_paths, tag_paths = utils.LoadDatasetPaths(DATASET)
-# img_paths = img_paths[:200]
-# tag_paths = tag_paths[:200]
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 dataset = DMH_D_Eval(img_paths, tag_paths, IMG_HIERARCHY_PATH, TAG_HIERARCHY_PATH, tokenizer)
 dataloader = torch.utils.data.DataLoader(dataset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, pin_memory=True)
@@ -82,94 +81,64 @@ for idx, data in enumerate(dataloader):
     else:
         img_labels_stack = torch.concatenate((img_labels_stack, img_labels), dim=0)
         tag_labels_stack = torch.concatenate((tag_labels_stack, tag_labels), dim=0)
-        img_features_stack = torch.concatenate((img_features_stack, img_features), dim=0)
-        tag_features_stack = torch.concatenate((tag_features_stack, tag_features), dim=0)
+        img_features_stack = torch.concatenate((img_features_stack, embedded_img_features), dim=0)
+        tag_features_stack = torch.concatenate((tag_features_stack, embedded_tag_features), dim=0)
 img_labels_stack = img_labels_stack.to('cpu').detach().numpy().copy()[:,0]
 tag_labels_stack = tag_labels_stack.to('cpu').detach().numpy().copy()[:,0]
 img_features_stack = img_features_stack.to('cpu').detach().numpy().copy()
 tag_features_stack = tag_features_stack.to('cpu').detach().numpy().copy()
+features = np.concatenate([img_features_stack, tag_features_stack], axis=0)
 
-# # PCA
-# N = 5
-# pca = PCA(n_components=100)
-# pca.fit(features)
-# embedding = pca.transform(features)
-# df = pd.DataFrame(embedding[:, :N])
 
-# # 主成分方向の分布
-# sns.pairplot(df, plot_kws={'s':10})
-# plt.savefig(f"{SAVE_FOLDER}/PCA.png", dpi=500)
-# plt.close()
+# PCA
+N = 5
+pca = PCA(n_components=100)
+pca.fit(features)
+embedding = pca.transform(features)
+df = pd.DataFrame(embedding[:, :N])
+df = df.assign(modal="img")
+t = len(img_features_stack)
+df.loc[t:, "modal"] = "tag"
 
-# # 累積寄与率
-# plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
-# plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
-# plt.xlim(0, 100)
-# plt.ylim(0, 1.0)
-# plt.xlabel("Number of principal components")
-# plt.ylabel("Cumulative contribution rate")
-# plt.grid()
-# plt.savefig(f"{SAVE_FOLDER}/PCA_contribution.png", dpi=300)
-# plt.close()
+# 主成分方向の分布
+sns.pairplot(df, hue="modal", plot_kws={'s':10})
+plt.savefig(f"{SAVE_FOLDER}/PCA.png", bbox_inches='tight', dpi=500)
+plt.close()
 
-# # 第1，第2主成分方向のプロット
-# X = embedding[:,0]
-# Y = embedding[:,1]
-# fig, ax = plt.subplots(figsize=(16, 12))
-# plt.scatter(X, Y, c='#377eb8')
-# plt.legend()
-# plt.xlim(X.min(), X.max())
-# plt.ylim(Y.min(), Y.max())
-# plt.xlabel("PC1")
-# plt.ylabel("PC2")
-# plt.savefig(f"{SAVE_FOLDER}/PC1_PC2.png", dpi=500)
-# plt.close()
+# 累積寄与率
+plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
+plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
+plt.xlim(0, 100)
+plt.ylim(0, 1.0)
+plt.xlabel("Number of principal components")
+plt.ylabel("Cumulative contribution rate")
+plt.grid()
+plt.savefig(f"{SAVE_FOLDER}/PCA_contribution.png", bbox_inches='tight', dpi=300)
+plt.close()
+
+# 第1，第2主成分方向のプロット
+X = embedding[:,0]
+Y = embedding[:,1]
+fig, ax = plt.subplots(figsize=(16, 12))
+plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
+plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
+plt.legend()
+plt.xlim(X.min(), X.max())
+plt.ylim(Y.min(), Y.max())
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.savefig(f"{SAVE_FOLDER}/PC1_PC2.png", bbox_inches='tight', dpi=500)
+plt.close()
 
 
 # tSNE
-# PERPLEXITY = 30
-# N_ITER = 300
-# print("tSNE_start")
-# features = np.concatenate([img_features_stack, tag_features_stack], axis=0)
-# embedding = TSNE(perplexity=PERPLEXITY, n_iter=N_ITER, initialization="pca", metric="euclidean", n_jobs=10, random_state=7).fit(features)
-# print("tSNE_end")
-# np.savez(f"{SAVE_FOLDER}/tSNE_numpy.npz", data=embedding)
-
-embedding = np.load(f"{SAVE_FOLDER}/tSNE_numpy.npz")["data"]
+PERPLEXITY = 30
+N_ITER = 300
+print("tSNE_start")
+embedding = TSNE(perplexity=PERPLEXITY, n_iter=N_ITER, initialization="pca", metric="euclidean", n_jobs=10, random_state=7).fit(features)
+print("tSNE_end")
 X = embedding[:, 0]
 Y = embedding[:, 1]
-
-# # 最上位のクラスで色分けしてプロット
-# with open(CLASS_MAP_FILE, 'r') as f:
-#     class_map = json.load(f)
-# class_map_reverse = {value: key for key, value in class_map.items()}
-
-# plt.figure(figsize=(16, 12))
-# NUM_CLASSES = 17
-# for class_id in range(NUM_CLASSES):
-#     plt.scatter(X[labels[:,0] == class_id], Y[labels[:,0] == class_id], 
-#                 color=plt.cm.tab20(class_id), label=class_map_reverse[class_id], alpha=0.8, edgecolors='w')
-# plt.legend()
-# plt.savefig(f"{SAVE_FOLDER}/tSNE_class.png", dpi=300)
-# plt.show()
-# plt.close()
-
-
-# # 画像でプロット
-# with open(LIST_FILE, 'r') as f:
-#     filenames = json.load(f)['images']
-# fig, ax = plt.subplots(figsize=(16, 12))
-# for i in range(len(features)):
-#     image = np.asarray(Image.open(filenames[i]))
-#     imagebox = OffsetImage(image, zoom=0.1)
-#     ab = AnnotationBbox(imagebox, (X[i], Y[i]), frameon=True, pad=0)
-#     ax.add_artist(ab)
-# plt.xlim(X.min(), X.max())
-# plt.ylim(Y.min(), Y.max())
-# plt.savefig(f"{SAVE_FOLDER}/tSNE_image.png", dpi=300)
-# plt.show()
-# plt.close()
-
 
 # マウスオーバーで画像とクラス，ファイル名を表示
 fig, ax = plt.subplots(figsize=(6.4*1.5, 4.8*1.5))
@@ -181,7 +150,6 @@ if ANNOTATE_WITH=='img':
     labels = list(img_labels_stack*2)+list(img_labels_stack*2+1)
 elif ANNOTATE_WITH=='tag':
     labels = list(tag_labels_stack*2)+list(tag_labels_stack*2+1)
-# labels = list(img_labels_stack*2)+list(tag_labels_stack*2+1)
 modality = ['img', 'tag']
 patches = [mpatches.Patch(color=plt.cm.tab20(i), label=f"cluster{i//2}_{modality[i%2]}") for i in range(20)]
 sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',

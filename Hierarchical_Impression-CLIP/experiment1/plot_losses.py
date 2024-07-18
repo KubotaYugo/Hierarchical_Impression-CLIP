@@ -1,9 +1,16 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 # CSVファイルの読み込み
-SAVE_FOLDER = "Hierarchical-CLIP/results"
-df = pd.read_csv('Hierarchical-CLIP/results/result_epoch.csv')
+EXP = "experiment1"
+SAVE_FOLDER = f"Hierarchical_Impression-CLIP/{EXP}/results/plot_losses"
+LOSS_PATH = f"Hierarchical_Impression-CLIP/{EXP}/results/result_epoch.csv"
+os.makedirs(SAVE_FOLDER, exist_ok=True)
+
+df = pd.read_csv(LOSS_PATH)
+
 
 # 1列目を横軸に設定
 x = df.iloc[:, 0]
