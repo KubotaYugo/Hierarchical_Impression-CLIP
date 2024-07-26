@@ -27,8 +27,9 @@ EARLY_STOPPING_PATIENCE = 30
 utils.fix_seed(7)
 
 # 保存用フォルダの準備 
-os.makedirs(f"Impression-CLIP/model", exist_ok=True)
-os.makedirs(f"Impression-CLIP/loss", exist_ok=True)
+SAVE_FOLDER = "Impression-CLIP/experiment1"
+os.makedirs(f"{SAVE_FOLDER}/model", exist_ok=True)
+os.makedirs(f"{SAVE_FOLDER}/loss", exist_ok=True)
 
 # データの準備
 train_font_paths, train_tag_paths = utils.LoadDatasetPaths("train")
@@ -49,7 +50,7 @@ valloader = torch.utils.data.DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=
 # モデルの準備
 device = torch.device('cuda:0')
 font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2, 2, 2, 2]).to(device)    
-text_encoder = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").text_model.to(device)
+clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 temp = utils.ExpMultiplier(initial_value=0.07).to(device)
 
 # Autoencoderのパラメータを読み込む
@@ -58,13 +59,13 @@ font_autoencoder.load_state_dict(torch.load(FONT_AUTOENCODER_STATE_PATH))
 font_encoder = font_autoencoder.encoder
 
 # オプティマイザ，loss, earlystopping, loggerの準備
-models = [font_encoder, text_encoder, temp]
-parameters = list(font_encoder.parameters())+list(text_encoder.parameters())+list(temp.parameters())
+models = [font_encoder, clip_model, temp]
+parameters = list(font_encoder.parameters())+list(clip_model.parameters())+list(temp.parameters())
 optimizer = torch.optim.AdamW(parameters, lr=LR, weight_decay=0.02)
 lr_scheduler = CosineAnnealingLR(optimizer, max_epochs=MAX_EPOCH, warmup_epochs=32, warmup_start_lr=WARMUP_LR, eta_min=0.00001)
 criterion = nn.CrossEntropyLoss(reduction='mean').to(device)
 earlystopping = utils.EarlyStopping(patience=EARLY_STOPPING_PATIENCE, delta=0)
-logger = SummaryWriter('Impression-CLIP/tensorboard')
+logger = SummaryWriter(f'{SAVE_FOLDER}/tensorboard')
 
 
 train_losses = []
@@ -86,14 +87,14 @@ for epoch in tqdm(range(1, MAX_EPOCH+1)):
 
     # 100エポック毎に保存
     if epoch%100==0:
-        state = {"font_encoder":font_encoder.state_dict(), "text_encoder":text_encoder.state_dict(), "temp":temp.state_dict(), 'optimizer': optimizer.state_dict()}
-        torch.save(state, "Impression-CLIP/model/epoch_{:05d}.pth.tar".format(epoch))
+        state = {"font_encoder":font_encoder.state_dict(), "clip_model":clip_model.state_dict(), "temp":temp.state_dict(), 'optimizer': optimizer.state_dict()}
+        torch.save(state, "{%s}/model/epoch_{:05d}.pth.tar".format(SAVE_FOLDER, epoch))
 
     # loss_bestが更新されたら，そのときの状態を記録しておく
     if val_loss_without_temp < val_loss_without_temp_best:
         # モデルの保存
         best_font_encoder = copy.deepcopy(font_encoder.state_dict())
-        best_text_encoder = copy.deepcopy(text_encoder.state_dict())
+        best_clip_model = copy.deepcopy(clip_model.state_dict())
         best_temp = copy.deepcopy(temp.state_dict())
         best_optimizer = copy.deepcopy(optimizer.state_dict())
         # best_lossの更新とbest_epochの保存
@@ -108,12 +109,12 @@ for epoch in tqdm(range(1, MAX_EPOCH+1)):
             break
 
 # モデルと結果の保存
-state = {"font_encoder":best_font_encoder, "text_encoder":best_text_encoder, "temp":best_temp, 'optimizer': best_optimizer}
-torch.save(state, f"Impression-CLIP/model/best.pth.tar")
+state = {"font_encoder":best_font_encoder, "clip_model":best_clip_model, "temp":best_temp, 'optimizer': best_optimizer}
+torch.save(state, f"{SAVE_FOLDER}/model/best.pth.tar")
 
 
 # csvへの保存
-f = open(f"Impression-CLIP/loss/result.csv", 'w')
+f = open(f"{SAVE_FOLDER}/loss/result.csv", 'w')
 writer = csv.writer(f)
 e_max = min(epoch, MAX_EPOCH)
 for e in range(1-1, e_max+1-1):

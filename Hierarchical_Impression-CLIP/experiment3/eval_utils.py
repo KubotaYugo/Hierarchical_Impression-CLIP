@@ -122,7 +122,7 @@ class DMH_D_ForTag(Dataset):
         return len(self.tag_list)
 
 
-def GetTagList():
+def get_tag_list():
     """
     評価対象のタグをdictで返す
     """
@@ -166,15 +166,15 @@ def extract_text_features(dataloder, clip_model, emb_t):
     with torch.no_grad():
         for i, data in enumerate(dataloder):
             tokenized_text = data.cuda(non_blocking=True)
-            text_feature = clip_model.get_text_features(tokenized_text) 
-            embedded_text_feature = emb_t(text_feature.to(dtype=torch.float32))
+            tag_feature = clip_model.get_text_features(tokenized_text) 
+            embedded_tag_feature = emb_t(tag_feature.to(dtype=torch.float32))
             if i==0:
-                text_features = text_feature
-                embedded_text_features = embedded_text_feature
+                tag_features = tag_feature
+                embedded_tag_features = embedded_tag_feature
             else:
-                text_features =  torch.concatenate((text_features, text_feature), dim=0)
-                embedded_text_features = torch.concatenate((embedded_text_features, embedded_text_feature), dim=0)
-    return text_features, embedded_text_features
+                tag_features =  torch.concatenate((tag_features, tag_feature), dim=0)
+                embedded_tag_features = torch.concatenate((embedded_tag_features, embedded_tag_feature), dim=0)
+    return tag_features, embedded_tag_feature
 
 
 def retrieval_rank(similarity_matrix, mode=None):

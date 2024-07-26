@@ -13,7 +13,6 @@ import numpy as np
 
 # define constant
 EXP = "experiment2"
-SAVE_FOLDER = f"Hierarchical_Impression-CLIP/{EXP}/results/visualization"
 MODEL_PATH = f"Hierarchical_Impression-CLIP/{EXP}/results/model/best.pth.tar"
 BATCH_SIZE = 256
 DATASET = 'test'
@@ -24,6 +23,11 @@ font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 emb_i = MLP.ReLU().to(device)
 emb_t = MLP.ReLU().to(device)
+font_autoencoder.eval()
+clip_model.eval()
+emb_i.eval()
+emb_t.eval()
+
 
 # パラメータの読み込み
 params = torch.load(MODEL_PATH)

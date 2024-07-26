@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision
 from tqdm import tqdm
 from torch import optim
 import os
@@ -47,9 +46,9 @@ EPOCH = 5000
 
 # 保存用ディレクトリの作成
 SAVE_PATH = "Cross-AE/co-training"
-os.makedirs(f"{SAVE_PATH}",exist_ok=True)
-os.makedirs(f"{SAVE_PATH}/imp-AE",exist_ok=True)
-os.makedirs(f"{SAVE_PATH}/img-AE",exist_ok=True)
+os.makedirs(f"{SAVE_PATH}", exist_ok=True)
+os.makedirs(f"{SAVE_PATH}/imp-AE", exist_ok=True)
+os.makedirs(f"{SAVE_PATH}/img-AE", exist_ok=True)
 
 # 乱数の固定
 seed = 1

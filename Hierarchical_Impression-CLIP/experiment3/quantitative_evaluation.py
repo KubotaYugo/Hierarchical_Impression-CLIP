@@ -12,7 +12,7 @@ import numpy as np
 
 
 # define constant
-EXP = "experiment2"
+EXP = "experiment3"
 SAVE_FOLDER = f"Hierarchical_Impression-CLIP/{EXP}/results/visualization"
 MODEL_PATH = f"Hierarchical_Impression-CLIP/{EXP}/results/model/best.pth.tar"
 BATCH_SIZE = 256
@@ -24,6 +24,11 @@ font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 emb_i = MLP.ReLU().to(device)
 emb_t = MLP.ReLU().to(device)
+font_autoencoder.eval()
+clip_model.eval()
+emb_i.eval()
+emb_t.eval()
+
 
 # パラメータの読み込み
 params = torch.load(MODEL_PATH)
@@ -38,7 +43,7 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 dataset = eval_utils.DMH_D_Eval(img_paths, tag_paths, tokenizer)
 dataloader = torch.utils.data.DataLoader(dataset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, pin_memory=True)
 # 単体タグのdataloder
-tag_list = list(eval_utils.GetTagList().values())
+tag_list = list(eval_utils.get_tag_list().values())
 tagset = eval_utils.DMH_D_ForTag(tag_list, tokenizer)
 tagloader = torch.utils.data.DataLoader(tagset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, pin_memory=True)
 

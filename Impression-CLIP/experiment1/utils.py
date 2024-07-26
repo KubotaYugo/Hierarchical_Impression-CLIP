@@ -66,13 +66,6 @@ def LoadDatasetPaths(dataset):
 
 
 class CustomDataset(Dataset):
-    """
-    フォントとタグのdataloderを作成
-    入力:   font_paths: フォントのパス
-            tag_paths: タグのパス
-            tokenizer
-    出力:   dataloder
-    """
     def __init__(self, font_paths, tag_paths, tokenizer):
         self.font_paths = font_paths
         self.tag_paths = tag_paths
@@ -110,12 +103,12 @@ class CustomDataset(Dataset):
 def train(epoch, models, optimizer, lr_scheduler, criterion, dataloader, logger, device):
     # モデルをほぐす
     font_encoder = models[0] 
-    text_encoder = models[1]
+    clip_model = models[1]
     temp = models[2]
     
     # trainに
     font_encoder.train()
-    text_encoder.train()
+    clip_model.train()
     temp.train()
     
     running_loss = []
@@ -127,7 +120,7 @@ def train(epoch, models, optimizer, lr_scheduler, criterion, dataloader, logger,
         font = Variable(data[0]).to(device)
         tokenized_text = Variable(data[1]).to(device)
         font_feature = font_encoder(font)
-        text_feature = text_encoder(tokenized_text).pooler_output
+        text_feature = clip_model.get_text_features(tokenized_text)
         font_feature = F.normalize(font_feature, dim=1)
         text_feature = F.normalize(text_feature, dim=1)
 
@@ -160,12 +153,12 @@ def train(epoch, models, optimizer, lr_scheduler, criterion, dataloader, logger,
 def val(epoch, models, criterion, dataloader, device):
     # モデルをほぐす
     font_encoder = models[0] 
-    text_encoder = models[1]
+    clip_model = models[1]
     temp = models[2]
     
     # evalに
     font_encoder.eval()
-    text_encoder.eval()
+    clip_model.eval()
     temp.eval()
 
     with torch.no_grad():
@@ -174,7 +167,7 @@ def val(epoch, models, criterion, dataloader, device):
             font = Variable(data[0]).to(device)
             tokenized_text = Variable(data[1]).to(device)
             font_feature = font_encoder(font)
-            text_feature = text_encoder(tokenized_text).pooler_output
+            text_feature = clip_model.get_text_features(tokenized_text)
             font_feature = F.normalize(font_feature, dim=1)
             text_feature = F.normalize(text_feature, dim=1)
             if i==0:

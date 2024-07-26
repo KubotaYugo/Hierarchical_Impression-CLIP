@@ -35,7 +35,7 @@ IMG_HIERARCHY_PATH = "image_clusters.npz"
 TAG_HIERARCHY_PATH = "impression_clusters.npz"
 BATCH_SIZE = 256
 DATASET = 'train'
-ANNOTATE_WITH = 'tag'
+ANNOTATE_WITH = 'img'   # tag or img
 
 # 保存用フォルダの準備
 os.makedirs(f"{SAVE_FOLDER}", exist_ok=True)
@@ -46,6 +46,10 @@ font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 emb_i = MLP.ReLU().to(device)
 emb_t = MLP.ReLU().to(device)
+font_autoencoder.eval()
+clip_model.eval()
+emb_i.eval()
+emb_t.eval()
 
 # パラメータの読み込み
 params = torch.load(MODEL_PATH)
