@@ -43,7 +43,7 @@ dataset = utils.CustomDataset(img_paths, tag_paths, tokenizer)
 dataloader = torch.utils.data.DataLoader(dataset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
 # 単体タグのdataloder
-tag_list = list(eval_utils.GetTagList().values())
+tag_list = list(eval_utils.get_tag_list().values())
 tagset = eval_utils.CustomDatasetForTag(tag_list, tokenizer)
 tagloader = torch.utils.data.DataLoader(tagset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
@@ -57,7 +57,7 @@ print(f"ARR_img2tag: {np.mean(RR_img2tag):.2f}")
 
 
 
-# # mean Average Precisionの計算
+# mean Average Precisionの計算
 _, embedded_single_tag_features = eval_utils.extract_text_features(tagloader, clip_model, emb_t)
 AP_tag2img = eval_utils.AP_tag2img(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths)
 AP_img2tag = eval_utils.AP_img2tag(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths)

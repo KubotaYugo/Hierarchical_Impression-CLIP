@@ -15,7 +15,6 @@ import utils
 import FontAutoencoder
 import MLP
 
-
 # ハイパラ
 MAX_EPOCH = 1000
 BATCH_SIZE = 1024
@@ -129,4 +128,4 @@ writer = csv.writer(f)
 e_max = min(epoch, MAX_EPOCH)
 for e in range(1-1, e_max+1-1):
     writer.writerow([e, train_losses[e], val_losses[e], val_losses_without_temp[e], temp_t_list[e], ARR_tag2img_list[e], ARR_img2tag_list[e], meanARR_list[e]])
-f.close() 
+f.close()

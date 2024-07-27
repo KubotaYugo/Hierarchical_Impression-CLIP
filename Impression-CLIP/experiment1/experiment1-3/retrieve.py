@@ -8,14 +8,16 @@ import torch.optim
 import torch.utils.data
 import utils
 import eval_utils
+import retrieve_utils
 import numpy as np
 
 
 # define constant
-EXP = "experiment2"
+EXP = "experiment3"
 MODEL_PATH = f"Impression-CLIP/{EXP}/model/best.pth.tar"
 BATCH_SIZE = 1024
 DATASET = 'test'
+SAVE_PATH = f"Impression-CLIP/{EXP}"
 
 # モデルの準備
 device = torch.device('cuda:0')
@@ -43,23 +45,19 @@ dataset = utils.CustomDataset(img_paths, tag_paths, tokenizer)
 dataloader = torch.utils.data.DataLoader(dataset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
 # 単体タグのdataloder
-tag_list = list(eval_utils.GetTagList().values())
+tag_list = list(eval_utils.get_tag_list().values())
 tagset = eval_utils.CustomDatasetForTag(tag_list, tokenizer)
 tagloader = torch.utils.data.DataLoader(tagset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
-# Average Retrieval Rankの計算
+# 特徴量の抽出
 _, _, embedded_img_features, embedded_tag_features = eval_utils.extract_features(font_autoencoder, clip_model, emb_i, emb_t, dataloader)
-similarity_matrix = torch.matmul(embedded_img_features, embedded_tag_features.T)
-RR_img2tag = eval_utils.retrieval_rank(similarity_matrix, "img2tag")
-RR_tag2img = eval_utils.retrieval_rank(similarity_matrix, "tag2img")
-print(f"ARR_tag2img: {np.mean(RR_tag2img):.2f}")
-print(f"ARR_img2tag: {np.mean(RR_img2tag):.2f}")
-
-
-
-# # mean Average Precisionの計算
 _, embedded_single_tag_features = eval_utils.extract_text_features(tagloader, clip_model, emb_t)
-AP_tag2img = eval_utils.AP_tag2img(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths)
-AP_img2tag = eval_utils.AP_img2tag(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths)
-print(f"AP_tag2img: {np.mean(AP_tag2img):.4f}")
-print(f"AP_img2tag: {np.mean(AP_img2tag):.4f}")
+
+# 各種検索
+retrieve_utils.retrieve_imp_img(embedded_img_features, embedded_tag_features, img_paths, tag_paths, 'imp2img', 'upper', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_imp_img(embedded_img_features, embedded_tag_features, img_paths, tag_paths, 'imp2img', 'lower', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_imp_img(embedded_img_features, embedded_tag_features, img_paths, tag_paths, 'img2imp', 'upper', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_imp_img(embedded_img_features, embedded_tag_features, img_paths, tag_paths, 'img2imp', 'lower', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_tag2img(embedded_img_features, embedded_single_tag_features, img_paths, tag_paths, tag_list, 'upper', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_tag2img(embedded_img_features, embedded_single_tag_features, img_paths, tag_paths, tag_list, 'lower', 10, SAVE_PATH, DATASET)
+retrieve_utils.retrieve_img2tag(embedded_img_features, embedded_single_tag_features, img_paths, tag_paths, tag_list, SAVE_PATH, dataset)

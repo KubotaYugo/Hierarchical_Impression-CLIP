@@ -98,6 +98,16 @@ def get_font_tags(tag_path):
         tags = [row for row in reader][0]
     return tags
 
+def get_image_to_save(img_path, char=None):
+    pad_h = np.ones(shape=(64, 1))*255
+    img = np.load(img_path)["arr_0"].astype(np.float32)
+    if char==None:
+        images = img[0]
+        for c in range(1,26):
+            images = np.hstack([images, pad_h, img[c]])
+    # elseで'ABC'を受け取ったらABC, 'HERONS'を受け取ったらHERONSを返すようにする
+    return images
+
 def AP_tag2img(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths):
     similarity_matrix = torch.matmul(embedded_img_features, embedded_single_tag_features.T).to("cpu").detach().numpy()
     topk_args = np.argsort(-similarity_matrix, axis=0)
@@ -127,3 +137,19 @@ def AP_img2tag(embedded_img_features, embedded_single_tag_features, tag_list, ta
                 p.append(count/(k+1))
         AP[f]= np.sum(p)/count
     return AP
+
+
+def metrics(query_tags, tags):
+    """
+    タグの集合を比較する
+    入力:   query_tags(検索のクエリとしたタグの集合)
+            tag(検索によりピックアップされたタグ)
+    出力:   precision, recall, f1-score
+    """
+    true_positives = len(set(tags)&set(query_tags))
+    rec_size = len(tags)
+    act_size = len(query_tags)
+    precision = true_positives/rec_size
+    recall = true_positives/act_size
+    f1_score = 2*(precision*recall)/(precision+recall) if (precision+recall)!=0 else 0.0
+    return precision, recall, f1_score

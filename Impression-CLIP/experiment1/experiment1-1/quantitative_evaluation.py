@@ -40,6 +40,7 @@ tag_list = list(eval_utils.get_tag_list().values())
 tagset = eval_utils.CustomDatasetForTag(tag_list, tokenizer)
 tagloader = torch.utils.data.DataLoader(tagset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
 
+
 # Average Retrieval Rankの計算
 img_features, tag_features = eval_utils.extract_features(font_encoder, clip_model, dataloader)
 similarity_matrix = torch.matmul(img_features, tag_features.T)
@@ -47,8 +48,6 @@ RR_img2tag = eval_utils.retrieval_rank(similarity_matrix, "img2tag")
 RR_tag2img = eval_utils.retrieval_rank(similarity_matrix, "tag2img")
 print(f"ARR_tag2img: {np.mean(RR_tag2img):.2f}")
 print(f"ARR_img2tag: {np.mean(RR_img2tag):.2f}")
-
-
 
 # mean Average Precisionの計算
 single_tag_features = eval_utils.extract_text_features(tagloader, clip_model)
