@@ -73,7 +73,7 @@ def extract_text_features(dataloder, clip_model, emb_t):
             else:
                 tag_features =  torch.concatenate((tag_features, tag_feature), dim=0)
                 embedded_tag_features = torch.concatenate((embedded_tag_features, embedded_tag_feature), dim=0)
-    return tag_features, embedded_tag_feature
+    return tag_features, embedded_tag_features
 
 
 def retrieval_rank(similarity_matrix, mode=None):

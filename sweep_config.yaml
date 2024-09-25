@@ -1,0 +1,13 @@
+sweep:
+  method: random  # ランダム探索
+  metric:
+    name: validation_accuracy  # 最適化する指標
+    goal: maximize  # 精度を最大化
+  parameters:
+    learning_rate:
+      min: 0.0001  # 最小学習率
+      max: 0.1  # 最大学習率
+    batch_size:
+      values: [16, 32, 64]  # バッチサイズの候補
+    optimizer:
+      values: ["adam", "sgd"]  # 使用するオプティマイザの候補

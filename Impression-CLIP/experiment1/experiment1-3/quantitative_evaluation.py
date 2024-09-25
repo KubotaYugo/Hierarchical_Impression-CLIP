@@ -12,7 +12,7 @@ import numpy as np
 
 
 # define constant
-EXP = "experiment3"
+EXP = "experiment1/experiment1-3"
 MODEL_PATH = f"Impression-CLIP/{EXP}/model/best.pth.tar"
 BATCH_SIZE = 1024
 DATASET = 'test'
