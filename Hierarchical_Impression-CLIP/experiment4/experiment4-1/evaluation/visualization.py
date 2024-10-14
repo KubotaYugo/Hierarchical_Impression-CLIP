@@ -188,7 +188,9 @@ modality = ['img', 'tag']
 patches = [mpatches.Patch(color=plt.cm.tab10(i), label=modality[i]) for i in range(2)]
 sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
                 linewidths=0.1, s=10)
-plt.legend(handles=patches)
+plt.xlim(-90, 90)
+plt.ylim(-80, 80)
+# plt.legend(handles=patches)
 plt.savefig(f"{SAVE_DIR}/tSNE.png", bbox_inches='tight', dpi=500)
 plt.show()
 plt.close()
@@ -210,6 +212,8 @@ for ANNOTATE_WITH in ['img', 'tag']:
     patches = [mpatches.Patch(color=plt.cm.tab20(i), label=f"cluster{i//2}_{modality[i%2]}") for i in range(20)]
     sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
                     linewidths=0.1, s=10)
+    plt.xlim(-90, 90)
+    plt.ylim(-80, 80)
 
     annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
                             arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
@@ -220,7 +224,7 @@ for ANNOTATE_WITH in ['img', 'tag']:
     annot_text.set_visible(False)
 
     fig.canvas.mpl_connect("motion_notify_event", hover)
-    plt.legend(handles=patches)
+    # plt.legend(handles=patches)
     plt.savefig(f"{SAVE_DIR}/tSNE_{ANNOTATE_WITH}.png", bbox_inches='tight', dpi=500)
     plt.show()
     plt.close()

@@ -143,6 +143,7 @@ def val(dataloader, models):
 
 if __name__ == '__main__':
     # define constant
+    EXP = utils.EXP
     IMG_HIERARCHY_PATH = utils.IMG_HIERARCHY_PATH
     TAG_HIERARCHY_PATH = utils.TAG_HIERARCHY_PATH
     MODEL_PATH = utils.MODEL_PATH
@@ -158,13 +159,13 @@ if __name__ == '__main__':
     BATCH_SIZE = args.bs
 
     # make save directory
-    SAVE_FOLDER = f'Hierarchical_Impression-CLIP/experiment3/experiment3-2/LR={LR}, BS={BATCH_SIZE}/results'
+    SAVE_FOLDER = f'{EXP}/LR={LR}, BS={BATCH_SIZE}/results'
     save_folder = SAVE_FOLDER + '/model'
     os.makedirs(save_folder, exist_ok=True)
 
     # set WandB
     wandb.init(
-    project = "HIC3-2",
+    project = "HIC3-3",
     name = f'LR={LR}, BS={BATCH_SIZE}',
     config = {
     "learning_rate": LR,

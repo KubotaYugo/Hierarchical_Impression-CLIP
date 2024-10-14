@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 
 
 # define constant
-EXP = 'Hierarchical_Impression-CLIP/experiment3/experiment3-2'
+EXP = 'Hierarchical_Impression-CLIP/experiment3/experiment3-3'
 MODEL_PATH = 'FontAutoencoder/model/best.pt'
 IMG_HIERARCHY_PATH = 'image_clusters.npz'
 TAG_HIERARCHY_PATH = 'impression_clusters.npz'
@@ -40,18 +40,6 @@ def LoadDatasetPaths(dataset):
     image_paths = [f"dataset/MyFonts_preprocessed/font_numpy_Impression-CLIP/{dataset}/{font_name[0]}.npz" for font_name in font_names]
     tag_paths = [f"dataset/MyFonts_preprocessed/tag_txt/{dataset}/{font_name[0]}.csv" for font_name in font_names]
     return image_paths, tag_paths
-
-def get_fontnames(dataset):
-    with open(f"dataset/MyFonts_preprocessed/tag_txt/fontname/{dataset}.csv") as f:
-        reader = csv.reader(f)
-        font_names = np.asarray([row for row in reader])
-    return font_names
-
-def get_font_tags(tag_path):
-    with open(tag_path, 'r', newline='', encoding='utf-8') as file:
-        reader = csv.reader(file)
-        tags = [row for row in reader][0]
-    return tags
 
 
 class EvalDataset(Dataset):
@@ -161,7 +149,6 @@ class EarlyStopping:
 
 
 def calculate_within_cluster_variance(cluster):
-    # np.mean(cluster, axis=0)と同じ意味(実際の値は少し変わる)
     kmeans = KMeans(n_clusters=1).fit(cluster)
     center = kmeans.cluster_centers_
     variance = np.sum((cluster - center) ** 2)
@@ -181,13 +168,13 @@ def bisecting_kmeans(data, num_clusters):
         kmeans = KMeans(n_clusters=2, random_state=42).fit(largest_cluster)
         labels = kmeans.labels_
         
-        # 特徴量をクラスタで分割
+        # 特徴量をクラスタを分割
         cluster_1 = largest_cluster[labels == 0]
         cluster_2 = largest_cluster[labels == 1]
         clusters.append(cluster_1)
         clusters.append(cluster_2)
         
-        # indexをクラスタで分割
+        # クラスタを分割
         data_index_1  = np.asarray(largest_index)[labels == 0]
         data_index_2  = np.asarray(largest_index)[labels == 1]
         data_index.append(data_index_1)

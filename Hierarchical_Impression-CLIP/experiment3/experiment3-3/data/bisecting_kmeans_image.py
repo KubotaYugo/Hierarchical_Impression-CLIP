@@ -4,6 +4,8 @@
 
 import torch
 import os
+import FontAutoencoder
+import utils
 from torch.autograd import Variable
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,12 +13,6 @@ from openTSNE import TSNE
 from sklearn.decomposition import PCA
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-from models import FontAutoencoder
-from lib import utils
 
 MODEL_PATH = "FontAutoencoder/model/best.pt"
 DATASET = "train"
@@ -51,7 +47,7 @@ clusters, data_index = utils.bisecting_kmeans(font_features, NUM_CLUSTERS)
 data_index_trasform = np.zeros(len(font_features))
 for i in range(len(data_index)):
     data_index_trasform[data_index[i]] = i
-# np.savez_compressed('image_clusters.npz', data_index_trasform)
+np.savez_compressed('image_clusters.npz', data_index_trasform)
 
 
 # tSNE
@@ -82,56 +78,56 @@ for i, indexes in enumerate(data_index):
     indexes = np.asarray(indexes)
     plt.scatter(X[indexes], Y[indexes], color=plt.cm.tab10(i), label=f'Cluster {i + 1}', s=3)
 plt.title('Bisecting K-means Clustering')
-plt.xlabel('PC1')
-plt.ylabel('PC2')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
 plt.legend()
-plt.savefig("image_clusters_PCA.png", bbox_inches='tight', dpi=500)
+plt.savefig("image_clusters_PCA.png")
 plt.close()
 
 
 # マウスオーバーで画像とクラス，ファイル名を表示
-# fig, ax = plt.subplots()
-# img = np.load(font_paths[0])["arr_0"][0]
-# imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
-# imagebox.image.axes = ax
+fig, ax = plt.subplots()
+img = np.load(font_paths[0])["arr_0"][0]
+imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
+imagebox.image.axes = ax
 
 
-# sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(data_index_trasform, dtype=np.int64)), alpha=0.8, edgecolors='w')
+sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(data_index_trasform, dtype=np.int64)), alpha=0.8, edgecolors='w')
 
-# annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
-#                            arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
-# annot_img.set_visible(False)
-# ax.add_artist(annot_img)
+annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
+                           arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
+annot_img.set_visible(False)
+ax.add_artist(annot_img)
 
-# annot_text = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
-#                     bbox=dict(boxstyle="round", fc="w"))
-# annot_text.set_visible(False)
+annot_text = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
+                    bbox=dict(boxstyle="round", fc="w"))
+annot_text.set_visible(False)
 
-# def update_annot(ind):
-#     i = ind["ind"][0]
-#     pos = sc.get_offsets()[i]
-#     annot_img.xy = (pos[0]+10, pos[1]+10)
-#     img = np.load(font_paths[i])["arr_0"][0]
-#     imagebox.set_data(img)
-#     annot_text.xy = (pos[0]+10, pos[1]-10)
-#     # text = f"{font_paths[i][len("dataset/MyFonts_preprocessed/"):]}"
-#     text = utils.get_tags(tag_paths[i])
-#     annot_text.set_text(text)
+def update_annot(ind):
+    i = ind["ind"][0]
+    pos = sc.get_offsets()[i]
+    annot_img.xy = (pos[0]+10, pos[1]+10)
+    img = np.load(font_paths[i])["arr_0"][0]
+    imagebox.set_data(img)
+    annot_text.xy = (pos[0]+10, pos[1]-10)
+    # text = f"{font_paths[i][len("dataset/MyFonts_preprocessed/"):]}"
+    text = utils.get_tags(tag_paths[i])
+    annot_text.set_text(text)
 
-# def hover(event):
-#     vis = annot_img.get_visible()
-#     if event.inaxes == ax:
-#         cont, ind = sc.contains(event)
-#         if cont:
-#             update_annot(ind)
-#             annot_img.set_visible(True)
-#             annot_text.set_visible(True)
-#             fig.canvas.draw_idle()
-#         else:
-#             if vis:
-#                 annot_img.set_visible(False)
-#                 annot_text.set_visible(False)
-#                 fig.canvas.draw_idle()
+def hover(event):
+    vis = annot_img.get_visible()
+    if event.inaxes == ax:
+        cont, ind = sc.contains(event)
+        if cont:
+            update_annot(ind)
+            annot_img.set_visible(True)
+            annot_text.set_visible(True)
+            fig.canvas.draw_idle()
+        else:
+            if vis:
+                annot_img.set_visible(False)
+                annot_text.set_visible(False)
+                fig.canvas.draw_idle()
 
-# fig.canvas.mpl_connect("motion_notify_event", hover)
-# plt.show()
+fig.canvas.mpl_connect("motion_notify_event", hover)
+plt.show()

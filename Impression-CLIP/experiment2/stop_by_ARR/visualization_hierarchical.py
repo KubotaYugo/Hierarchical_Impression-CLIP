@@ -1,16 +1,17 @@
-"""
-pretrain.pyで学習したモデルが出力する特徴量の分布を可視化する
-"""
-import sys
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
 from transformers import CLIPTokenizer, CLIPModel
+import FontAutoencoder
 import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
+from torch.utils.data.dataset import Dataset
+import utils
+import eval_utils
 import numpy as np
+import MLP
+import csv
+
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -19,11 +20,67 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import seaborn as sns
 
-from models import FontAutoencoder
-from models import MLP
-from lib import utils
-from lib import eval_utils
 
+class DMH_D_Eval_With_Labels(Dataset):
+    def __init__(self, img_paths, tag_paths, img_hierarchy_path, tag_hierarchy_path, tokenizer):
+        self.tokenizer = tokenizer
+        self.img_paths = img_paths
+        self.tag_paths = tag_paths
+        self.img_hierarchy = np.load(img_hierarchy_path)["arr_0"].astype(np.int64)
+        self.tag_hierarchy = np.load(tag_hierarchy_path)["arr_0"].astype(np.int64)
+        self.num_data = len(img_paths)
+        self.img_labels = {}
+        self.tag_labels = {}
+        for i in range(self.num_data):
+            img_cluster = self.img_hierarchy[i]
+            tag_cluster = self.tag_hierarchy[i]
+            # 画像のモダリティの階層構造
+            if img_cluster not in self.img_labels:
+                self.img_labels[img_cluster] = {}
+            self.img_labels[img_cluster][i] = i       
+            # 印象のモダリティの階層構造
+            if tag_cluster not in self.tag_labels:
+                self.tag_labels[tag_cluster] = {}
+            self.tag_labels[tag_cluster][i] = i
+
+    def get_token(self, tag_path):
+        with open(tag_path, encoding='utf8') as f:
+            csvreader = csv.reader(f)
+            tags = [row for row in csvreader][0]
+        if len(tags) == 1:
+            prompt = f"The impression is {tags[0]}."
+        elif len(tags) == 2:
+            prompt = f"First and second impressions are {tags[0]} and {tags[1]}, respectively."
+        elif len(tags) >= 3:
+            ordinal = ["First", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]
+            prompt1 = ordinal[0]
+            prompt2 = tags[0]
+            i = 0
+            for i in range(1, min(len(tags)-1, 10-1)):
+                prompt1 = prompt1 + ", " + ordinal[i]
+                prompt2 = prompt2 + ", " + tags[i]
+            prompt1 = prompt1 + ", and " + ordinal[i+1] + " impressions are "
+            prompt2 = prompt2 + ", and " + tags[i+1] + ", respectively."                
+            prompt = prompt1 + prompt2
+        tokenized_text = self.tokenizer(prompt, return_tensors="pt", max_length=self.tokenizer.max_model_input_sizes['openai/clip-vit-base-patch32'], padding="max_length", truncation=True)
+        return tokenized_text
+        
+    def __getitem__(self, index):
+        imgs, tokenized_tags, img_labels, tag_labels = [], [], [], []
+        img = np.load(self.img_paths[index])["arr_0"].astype(np.float32)
+        img = torch.from_numpy(img/255)
+        tokenized_tag = self.get_token(self.tag_paths[index])['input_ids'][0]
+        img_label = [self.img_hierarchy[index], index]
+        tag_label = [self.tag_hierarchy[index], index]
+        imgs.append(img)
+        tokenized_tags.append(tokenized_tag)
+        img_labels.append(img_label)
+        tag_labels.append(tag_label)
+        return imgs, tokenized_tags, torch.tensor(img_labels), torch.tensor(tag_labels)
+
+    def __len__(self):
+        return self.num_data
+    
 
 def update_annot(ind):
     i = ind["ind"][0]
@@ -59,44 +116,42 @@ def hover(event):
                 annot_text.set_visible(False)
                 fig.canvas.draw_idle()
 
+
+
 # define constant
 EXP = utils.EXP
-IMG_HIERARCHY_PATH = utils.IMG_HIERARCHY_PATH
-TAG_HIERARCHY_PATH = utils.TAG_HIERARCHY_PATH
-LR = utils.LR
+IMG_HIERARCHY_PATH = 'image_clusters.npz'
+TAG_HIERARCHY_PATH = 'impression_clusters.npz'
+MODEL_PATH = f"{EXP}/model/best.pth.tar"
 BATCH_SIZE = utils.BATCH_SIZE
-MODEL_PATH = f"{EXP}/LR={LR}, BS={BATCH_SIZE}/results/model/best.pth.tar"
-SAVE_DIR = f"{EXP}/LR={LR}, BS={BATCH_SIZE}/visualization"
 DATASET = 'train'
-
-# 保存用フォルダの準備
-os.makedirs(f"{SAVE_DIR}", exist_ok=True)
+SAVE_DIR = f'{EXP}/visualization'
+os.makedirs(SAVE_DIR, exist_ok=True)
 
 # モデルの準備
 device = torch.device('cuda:0')
 font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2, 2, 2, 2]).to(device)
+font_encoder = font_autoencoder.encoder    
 clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 emb_i = MLP.ReLU().to(device)
 emb_t = MLP.ReLU().to(device)
+
+# パラメータの読み込み
+params = torch.load(MODEL_PATH)
+font_encoder.load_state_dict(params['font_encoder'])
+clip_model.load_state_dict(params['clip_model'])
+emb_i.load_state_dict(params['emb_i'])
+emb_t.load_state_dict(params['emb_t'])
 font_autoencoder.eval()
 clip_model.eval()
 emb_i.eval()
 emb_t.eval()
 
-
-# パラメータの読み込み
-params = torch.load(MODEL_PATH)
-font_autoencoder.load_state_dict(params['font_autoencoder'])
-clip_model.load_state_dict(params['clip_model'])
-emb_i.load_state_dict(params['emb_i'])
-emb_t.load_state_dict(params['emb_t'])
-
 # dataloderの準備
 img_paths, tag_paths = utils.LoadDatasetPaths(DATASET)
 tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-dataset = eval_utils.DMH_D_Eval_With_Labels(img_paths, tag_paths, IMG_HIERARCHY_PATH, TAG_HIERARCHY_PATH, tokenizer)
+dataset = DMH_D_Eval_With_Labels(img_paths, tag_paths, IMG_HIERARCHY_PATH, TAG_HIERARCHY_PATH, tokenizer)
 dataloader = torch.utils.data.DataLoader(dataset, num_workers=os.cpu_count(), batch_size=BATCH_SIZE, shuffle=False, pin_memory=True)
-
 
 # 特徴量の取得
 for idx, data in enumerate(dataloader):
@@ -128,48 +183,6 @@ tag_features_stack = tag_features_stack.to('cpu').detach().numpy().copy()
 features = np.concatenate([img_features_stack, tag_features_stack], axis=0)
 
 
-
-# PCA
-N = 5
-pca = PCA(n_components=100)
-pca.fit(features)
-embedding = pca.transform(features)
-df = pd.DataFrame(embedding[:, :N])
-df = df.assign(modal="img")
-t = len(img_features_stack)
-df.loc[t:, "modal"] = "tag"
-
-# 主成分方向の分布
-sns.pairplot(df, hue="modal", plot_kws={'s':10})
-plt.savefig(f"{SAVE_DIR}/PCA.png", bbox_inches='tight', dpi=500)
-plt.close()
-
-# 累積寄与率
-plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
-plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
-plt.xlim(0, 100)
-plt.ylim(0, 1.0)
-plt.xlabel("Number of principal components")
-plt.ylabel("Cumulative contribution rate")
-plt.grid()
-plt.savefig(f"{SAVE_DIR}/PCA_contribution.png", bbox_inches='tight', dpi=300)
-plt.close()
-
-# 第1，第2主成分方向のプロット
-X = embedding[:,0]
-Y = embedding[:,1]
-fig, ax = plt.subplots(figsize=(16, 12))
-plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
-plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
-plt.legend()
-plt.xlim(X.min(), X.max())
-plt.ylim(Y.min(), Y.max())
-plt.xlabel("PC1")
-plt.ylabel("PC2")
-plt.savefig(f"{SAVE_DIR}/PC1_PC2.png", bbox_inches='tight', dpi=500)
-plt.close()
-
-
 # tSNE
 PERPLEXITY = 30
 N_ITER = 300
@@ -189,9 +202,9 @@ patches = [mpatches.Patch(color=plt.cm.tab10(i), label=modality[i]) for i in ran
 sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
                 linewidths=0.1, s=10)
 plt.xlim(-90, 90)
-plt.ylim(-80, 80)
+plt.ylim(-90, 90)
 # plt.legend(handles=patches)
-plt.savefig(f"{SAVE_DIR}/tSNE.png", bbox_inches='tight', dpi=500)
+plt.savefig(f"{SAVE_DIR}/tSNE_with_hierarchy_{DATASET}.png", bbox_inches='tight', dpi=500)
 plt.show()
 plt.close()
 
@@ -213,7 +226,7 @@ for ANNOTATE_WITH in ['img', 'tag']:
     sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
                     linewidths=0.1, s=10)
     plt.xlim(-90, 90)
-    plt.ylim(-80, 80)
+    plt.ylim(-90, 90)
 
     annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
                             arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
@@ -225,6 +238,6 @@ for ANNOTATE_WITH in ['img', 'tag']:
 
     fig.canvas.mpl_connect("motion_notify_event", hover)
     # plt.legend(handles=patches)
-    plt.savefig(f"{SAVE_DIR}/tSNE_{ANNOTATE_WITH}.png", bbox_inches='tight', dpi=500)
+    plt.savefig(f"{SAVE_DIR}/tSNE_with_hierarchy_{ANNOTATE_WITH}_{DATASET}.png", bbox_inches='tight', dpi=500)
     plt.show()
     plt.close()
