@@ -5,6 +5,8 @@ import torch.utils.data
 from torch.utils.data.dataset import Dataset
 import numpy as np
 import csv
+from matplotlib import cm
+from matplotlib.image import imread, imsave
 
 
 class DMH_D_Eval_train(Dataset):
@@ -208,6 +210,29 @@ def get_image_to_save(img_path, char=None):
             images = np.hstack([images, pad_h, img[c]])
     # elseで'ABC'を受け取ったらABC, 'HERONS'を受け取ったらHERONSを返すようにする
     return images
+
+
+def save_fonts(fontlist, dataset, filename):
+    # 画像を保存
+    imgs_hstacks = []
+    pad_h = np.ones(shape=(64, 1))*255
+    pad_v = np.ones(shape=(3, 64*26+1*25))*255
+    for fontname in fontlist:
+        fontpath = f'dataset/MyFonts_preprocessed/font_numpy_Impression-CLIP/{dataset}/{fontname}.npz' 
+        imgs = np.load(fontpath)["arr_0"].astype(np.float32)
+        imgs_hstacks.append(np.hstack([imgs[0]]+[np.hstack([pad_h, imgs[i]]) for i in range(1, 26)]))
+    output_img = np.vstack([imgs_hstacks[0]]+[np.vstack([pad_v, imgs_hstacks[i]]) for i in range(1, len(imgs_hstacks))])
+    imsave(f'{filename}.png', output_img, cmap=cm.gray)
+
+    # タグを保存
+    write_rows = [['fontname', 'tags']]
+    for fontname in fontlist:
+        tag_path = f'dataset/MyFonts_preprocessed/tag_txt/{dataset}/{fontname}.csv'
+        tags = get_font_tags(tag_path)
+        write_rows.append([fontname]+tags)
+    with open(f'{filename}.csv', 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerows(write_rows)
 
 
 def extract_features(font_autoencoder, clip_model, emb_i, emb_t, dataloader):

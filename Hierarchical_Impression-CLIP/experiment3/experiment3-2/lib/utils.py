@@ -44,7 +44,7 @@ def LoadDatasetPaths(dataset):
 def get_fontnames(dataset):
     with open(f"dataset/MyFonts_preprocessed/tag_txt/fontname/{dataset}.csv") as f:
         reader = csv.reader(f)
-        font_names = np.asarray([row for row in reader])
+        font_names = np.asarray([row[0] for row in reader])
     return font_names
 
 def get_font_tags(tag_path):

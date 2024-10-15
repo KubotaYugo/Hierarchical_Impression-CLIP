@@ -129,45 +129,45 @@ features = np.concatenate([img_features_stack, tag_features_stack], axis=0)
 
 
 
-# PCA
-N = 5
-pca = PCA(n_components=100)
-pca.fit(features)
-embedding = pca.transform(features)
-df = pd.DataFrame(embedding[:, :N])
-df = df.assign(modal="img")
-t = len(img_features_stack)
-df.loc[t:, "modal"] = "tag"
+# # PCA
+# N = 5
+# pca = PCA(n_components=100)
+# pca.fit(features)
+# embedding = pca.transform(features)
+# df = pd.DataFrame(embedding[:, :N])
+# df = df.assign(modal="img")
+# t = len(img_features_stack)
+# df.loc[t:, "modal"] = "tag"
 
-# 主成分方向の分布
-sns.pairplot(df, hue="modal", plot_kws={'s':10})
-plt.savefig(f"{SAVE_DIR}/PCA.png", bbox_inches='tight', dpi=500)
-plt.close()
+# # 主成分方向の分布
+# sns.pairplot(df, hue="modal", plot_kws={'s':10})
+# plt.savefig(f"{SAVE_DIR}/PCA.png", bbox_inches='tight', dpi=500)
+# plt.close()
 
-# 累積寄与率
-plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
-plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
-plt.xlim(0, 100)
-plt.ylim(0, 1.0)
-plt.xlabel("Number of principal components")
-plt.ylabel("Cumulative contribution rate")
-plt.grid()
-plt.savefig(f"{SAVE_DIR}/PCA_contribution.png", bbox_inches='tight', dpi=300)
-plt.close()
+# # 累積寄与率
+# plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
+# plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
+# plt.xlim(0, 100)
+# plt.ylim(0, 1.0)
+# plt.xlabel("Number of principal components")
+# plt.ylabel("Cumulative contribution rate")
+# plt.grid()
+# plt.savefig(f"{SAVE_DIR}/PCA_contribution.png", bbox_inches='tight', dpi=300)
+# plt.close()
 
-# 第1，第2主成分方向のプロット
-X = embedding[:,0]
-Y = embedding[:,1]
-fig, ax = plt.subplots(figsize=(16, 12))
-plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
-plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
-plt.legend()
-plt.xlim(X.min(), X.max())
-plt.ylim(Y.min(), Y.max())
-plt.xlabel("PC1")
-plt.ylabel("PC2")
-plt.savefig(f"{SAVE_DIR}/PC1_PC2.png", bbox_inches='tight', dpi=500)
-plt.close()
+# # 第1，第2主成分方向のプロット
+# X = embedding[:,0]
+# Y = embedding[:,1]
+# fig, ax = plt.subplots(figsize=(16, 12))
+# plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
+# plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
+# plt.legend()
+# plt.xlim(X.min(), X.max())
+# plt.ylim(Y.min(), Y.max())
+# plt.xlabel("PC1")
+# plt.ylabel("PC2")
+# plt.savefig(f"{SAVE_DIR}/PC1_PC2.png", bbox_inches='tight', dpi=500)
+# plt.close()
 
 
 # tSNE
@@ -196,35 +196,35 @@ plt.show()
 plt.close()
 
 
-# 各モダリティのクラスタ別に色分け
-for ANNOTATE_WITH in ['img', 'tag']:
-    # マウスオーバーで画像とクラス，ファイル名を表示
-    fig, ax = plt.subplots(figsize=(6.4*1.5, 4.8*1.5))
-    img = np.load(img_paths[0])["arr_0"][0]
-    imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
-    imagebox.image.axes = ax
+# # 各モダリティのクラスタ別に色分け
+# for ANNOTATE_WITH in ['img', 'tag']:
+#     # マウスオーバーで画像とクラス，ファイル名を表示
+#     fig, ax = plt.subplots(figsize=(6.4*1.5, 4.8*1.5))
+#     img = np.load(img_paths[0])["arr_0"][0]
+#     imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
+#     imagebox.image.axes = ax
     
-    if ANNOTATE_WITH=='img':
-        labels = list(img_labels_stack*2)+list(img_labels_stack*2+1)
-    elif ANNOTATE_WITH=='tag':
-        labels = list(tag_labels_stack*2)+list(tag_labels_stack*2+1)
-    modality = ['img', 'tag']
-    patches = [mpatches.Patch(color=plt.cm.tab20(i), label=f"cluster{i//2}_{modality[i%2]}") for i in range(20)]
-    sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
-                    linewidths=0.1, s=10)
-    plt.xlim(-90, 90)
-    plt.ylim(-80, 80)
+#     if ANNOTATE_WITH=='img':
+#         labels = list(img_labels_stack*2)+list(img_labels_stack*2+1)
+#     elif ANNOTATE_WITH=='tag':
+#         labels = list(tag_labels_stack*2)+list(tag_labels_stack*2+1)
+#     modality = ['img', 'tag']
+#     patches = [mpatches.Patch(color=plt.cm.tab20(i), label=f"cluster{i//2}_{modality[i%2]}") for i in range(20)]
+#     sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w',
+#                     linewidths=0.1, s=10)
+#     plt.xlim(-90, 90)
+#     plt.ylim(-80, 80)
 
-    annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
-                            arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
-    annot_img.set_visible(False)
-    ax.add_artist(annot_img)
+#     annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
+#                             arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
+#     annot_img.set_visible(False)
+#     ax.add_artist(annot_img)
 
-    annot_text = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points", bbox=dict(boxstyle="round", fc="w"))
-    annot_text.set_visible(False)
+#     annot_text = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points", bbox=dict(boxstyle="round", fc="w"))
+#     annot_text.set_visible(False)
 
-    fig.canvas.mpl_connect("motion_notify_event", hover)
-    # plt.legend(handles=patches)
-    plt.savefig(f"{SAVE_DIR}/tSNE_{ANNOTATE_WITH}.png", bbox_inches='tight', dpi=500)
-    plt.show()
-    plt.close()
+#     fig.canvas.mpl_connect("motion_notify_event", hover)
+#     # plt.legend(handles=patches)
+#     plt.savefig(f"{SAVE_DIR}/tSNE_{ANNOTATE_WITH}.png", bbox_inches='tight', dpi=500)
+#     plt.show()
+#     plt.close()
