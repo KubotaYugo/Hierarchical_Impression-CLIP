@@ -53,7 +53,6 @@ def get_font_tags(tag_path):
         tags = [row for row in reader][0]
     return tags
 
-
 class EvalDataset(Dataset):
     """
     フォントとタグのdataloderを作成
@@ -132,12 +131,6 @@ class ImageDataset(Dataset):
         font = np.load(self.font_paths[idx])["arr_0"].astype(np.float32)
         font = torch.from_numpy(font/255)
         return font
-
-def get_tags(tag_path):
-        with open(tag_path, encoding='utf8') as f:
-            csvreader = csv.reader(f)
-            tags = [row for row in csvreader][0]
-        return tags
 
 
 class EarlyStopping:

@@ -19,6 +19,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 from lib import utils
 
+
 class EarlyStopping:
     def __init__(self, patience, delta=0):
         self.patience = patience
@@ -134,6 +135,7 @@ def val(dataloader, models):
             embedded_tag_features_stack = torch.concatenate((embedded_tag_features_stack, embedded_tag_features), dim=0)
     similarity_matrix = torch.matmul(embedded_img_features_stack, embedded_tag_features_stack.T)
     # culculate Average Precision
+    # メモ: 引数を受け取るところでtag2imgとimg2tagが逆になってる
     ARR_tag2img = np.mean(retrieval_rank(similarity_matrix, "tag2img"))
     ARR_img2tag = np.mean(retrieval_rank(similarity_matrix, "img2tag"))
     meanARR = (ARR_img2tag+ARR_tag2img)/2

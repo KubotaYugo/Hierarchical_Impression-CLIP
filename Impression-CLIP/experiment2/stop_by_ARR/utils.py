@@ -11,6 +11,8 @@ import math
 
 EXP = "Impression-CLIP/experiment2/stop_by_ARR"
 BATCH_SIZE = 8192
+IMG_HIERARCHY_PATH = 'image_clusters.npz'
+TAG_HIERARCHY_PATH = 'impression_clusters.npz'
 
 class ExpMultiplier(nn.Module):
     def __init__(self, initial_value=0.0):
@@ -65,6 +67,12 @@ def LoadDatasetPaths(dataset):
     return image_paths, tag_paths
 
 
+def get_font_tags(tag_path):
+        with open(tag_path, encoding='utf8') as f:
+            csvreader = csv.reader(f)
+            tags = [row for row in csvreader][0]
+        return tags
+    
 
 
 class CustomDataset(Dataset):
@@ -106,13 +114,6 @@ class CustomDataset(Dataset):
             prompt = prompt1 + prompt2
         tokenized_text = self.tokenizer(prompt, return_tensors="pt", max_length=self.tokenizer.max_model_input_sizes['openai/clip-vit-base-patch32'], padding="max_length", truncation=True)
         return font, tokenized_text['input_ids'][0]
-
-def get_tags(tag_path):
-        with open(tag_path, encoding='utf8') as f:
-            csvreader = csv.reader(f)
-            tags = [row for row in csvreader][0]
-        return tags
-    
 
 def train(epoch, models, optimizer, criterion, dataloader, logger, device):
     # モデルをほぐす

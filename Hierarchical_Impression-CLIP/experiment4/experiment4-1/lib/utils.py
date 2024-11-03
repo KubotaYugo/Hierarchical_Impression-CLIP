@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 
 # define constant
 EXP = 'Hierarchical_Impression-CLIP/experiment4/experiment4-1'
-MODEL_PATH = 'FontAutoencoder/model/best.pt'
+z = 'FontAutoencoder/model/best.pt'
 IMG_HIERARCHY_PATH = 'image_clusters.npz'
 TAG_HIERARCHY_PATH = 'impression_clusters.npz'
 MAX_EPOCH = 10000
@@ -40,6 +40,17 @@ def LoadDatasetPaths(dataset):
     tag_paths = [f"dataset/MyFonts_preprocessed/tag_txt/{dataset}/{font_name[0]}.csv" for font_name in font_names]
     return image_paths, tag_paths
 
+def get_fontnames(dataset):
+    with open(f"dataset/MyFonts_preprocessed/tag_txt/fontname/{dataset}.csv") as f:
+        reader = csv.reader(f)
+        font_names = np.asarray([row[0] for row in reader])
+    return font_names
+
+def get_font_tags(tag_path):
+    with open(tag_path, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        tags = [row for row in reader][0]
+    return tags
 
 class EvalDataset(Dataset):
     """
@@ -119,12 +130,6 @@ class ImageDataset(Dataset):
         font = np.load(self.font_paths[idx])["arr_0"].astype(np.float32)
         font = torch.from_numpy(font/255)
         return font
-
-def get_tags(tag_path):
-        with open(tag_path, encoding='utf8') as f:
-            csvreader = csv.reader(f)
-            tags = [row for row in csvreader][0]
-        return tags
 
 
 class EarlyStopping:

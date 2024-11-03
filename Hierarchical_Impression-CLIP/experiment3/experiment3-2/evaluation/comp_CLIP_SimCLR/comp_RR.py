@@ -1,7 +1,7 @@
 '''
 CLIPとSimCLR(階層構造なし)の対応付け精度(Retrieval Rank)を比較する
 CLIP:   ImpressionCLIP/experiment2/stop_by_ARR
-SimCLR: Hierarchical_ImpressionCLIP/experiment3/experiment3-2
+SimCLR: Hierarchical_ImpressionCLIP/experiment4/experiment4-1
 '''
 
 import torch
@@ -106,7 +106,7 @@ def plot_RR(RR_CLIP, RR_SimCLR, mode):
 
 
 # define constant
-DATASET = 'val'
+DATASET = 'test'
 
 # 保存用ディレクトリの作成
 EXP = 'Hierarchical_Impression-CLIP/experiment3/experiment3-2'

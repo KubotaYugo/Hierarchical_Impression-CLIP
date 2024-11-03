@@ -1,0 +1,1 @@
+実験3-2ベースでmodels/train.py，losses.pyに修正を加えたもの

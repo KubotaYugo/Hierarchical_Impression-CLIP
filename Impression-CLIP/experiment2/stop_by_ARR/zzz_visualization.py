@@ -63,53 +63,61 @@ embedded_tag_features = embedded_tag_features.to('cpu').detach().numpy().copy()
 features = np.concatenate([embedded_img_features, embedded_tag_features], axis=0)
 
 # PCA
-N = 5
-pca = PCA(n_components=100)
-pca.fit(features)
-embedding = pca.transform(features)
-df = pd.DataFrame(embedding[:, :N])
-df = df.assign(modal="img")
-t = len(embedded_img_features)
-df.loc[t:, "modal"] = "tag"
+# N = 5
+# pca = PCA(n_components=100)
+# pca.fit(features)
+# embedding = pca.transform(features)
+# df = pd.DataFrame(embedding[:, :N])
+# df = df.assign(modal="img")
+# t = len(embedded_img_features)
+# df.loc[t:, "modal"] = "tag"
 
-# 主成分方向の分布
-sns.pairplot(df, hue="modal", plot_kws={'s':10})
-plt.savefig(f"{SAVE_PATH}/PCA.png", bbox_inches='tight', dpi=500)
-plt.close()
+# # 主成分方向の分布
+# sns.pairplot(df, hue="modal", plot_kws={'s':10})
+# plt.savefig(f"{SAVE_PATH}/PCA.png", bbox_inches='tight', dpi=500)
+# plt.close()
 
-# 累積寄与率
-plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
-plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
-plt.xlim(0, 100)
-plt.ylim(0, 1.0)
-plt.xlabel("Number of principal components")
-plt.ylabel("Cumulative contribution rate")
-plt.grid()
-plt.savefig(f"{SAVE_PATH}/PCA_contribution.png", bbox_inches='tight', dpi=300)
-plt.close()
+# # 累積寄与率
+# plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o")
+# plt.plot([0] + list(pca.explained_variance_ratio_), "-o")
+# plt.xlim(0, 100)
+# plt.ylim(0, 1.0)
+# plt.xlabel("Number of principal components")
+# plt.ylabel("Cumulative contribution rate")
+# plt.grid()
+# plt.savefig(f"{SAVE_PATH}/PCA_contribution.png", bbox_inches='tight', dpi=300)
+# plt.close()
 
-# 第1，第2主成分方向のプロット
-X = embedding[:,0]
-Y = embedding[:,1]
-fig, ax = plt.subplots(figsize=(16, 12))
-plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
-plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
-plt.legend()
-plt.xlim(X.min(), X.max())
-plt.ylim(Y.min(), Y.max())
-plt.xlabel("PC1")
-plt.ylabel("PC2")
-plt.savefig(f"{SAVE_PATH}/PC1_PC2.png", bbox_inches='tight', dpi=500)
-plt.close()
+# # 第1，第2主成分方向のプロット
+# X = embedding[:,0]
+# Y = embedding[:,1]
+# fig, ax = plt.subplots(figsize=(16, 12))
+# plt.scatter(X[:t], Y[:t], c='#377eb8', label="img", alpha=0.8, s=5)
+# plt.scatter(X[t:], Y[t:], c='#ff7f00', label="tag", alpha=0.8, s=5)
+# plt.legend()
+# plt.xlim(X.min(), X.max())
+# plt.ylim(Y.min(), Y.max())
+# plt.xlabel("PC1")
+# plt.ylabel("PC2")
+# plt.savefig(f"{SAVE_PATH}/PC1_PC2.png", bbox_inches='tight', dpi=500)
+# plt.close()
 
 # tSNE
-PERPLEXITY = 30
-N_ITER = 300
-print("tSNE_start")
-embedding = TSNE(perplexity=PERPLEXITY, n_iter=N_ITER, initialization="pca", metric="euclidean", n_jobs=10, random_state=7).fit(features)
-print("tSNE_end")
-X = embedding[:, 0]
-Y = embedding[:, 1]
+tSNE_filename = f"{EXP}/tSNE_withRR/{DATASET}/tSNE_embedding.npz"
+if os.path.exists(tSNE_filename):
+    embedding = np.load(tSNE_filename)['arr_0']
+    print("Loaded existing t-SNE results.")
+else:
+    embedded_img_features = embedded_img_features.to('cpu').detach().numpy().copy()
+    embedded_tag_features = embedded_tag_features.to('cpu').detach().numpy().copy()
+    features = np.concatenate([embedded_img_features, embedded_tag_features], axis=0)
+    PERPLEXITY = 30
+    N_ITER = 300
+    print("tSNE_start")
+    embedding = TSNE(perplexity=PERPLEXITY, n_iter=N_ITER, initialization="pca", metric="euclidean", n_jobs=10, random_state=7).fit(features)
+    np.savez_compressed(tSNE_filename, embedding)
+    print("tSNE_end")
+    print("Calculated and saved new t-SNE results.")
 
 # マウスオーバーで画像とクラス，ファイル名を表示
 fig, ax = plt.subplots(figsize=(6.4*1.5, 4.8*1.5))
@@ -117,9 +125,9 @@ img = np.load(img_paths[0])["arr_0"][0]
 imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
 imagebox.image.axes = ax
 
+X = embedding[:, 0]
+Y = embedding[:, 1]
 labels = [0]*len(embedded_img_features) + [1]*len(embedded_tag_features)
-# labels = [0, 1]
-# patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f"img") for i in range(len(embedded_img_features))] + [mpatches.Patch(color=plt.cm.tab10(i), label=f"tag") for i in range(len(embedded_tag_features))]
 patches = [mpatches.Patch(color=plt.cm.tab10(0), label=f"img"), mpatches.Patch(color=plt.cm.tab10(1), label=f"tag")]
 sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(labels, dtype=np.int64)), alpha=0.8, edgecolors='w', linewidths=0.1, s=10)
 
@@ -144,7 +152,7 @@ def update_annot(ind):
         annot_text.set_text(fontname)
     else:
         annot_text.xy = (pos[0]+0.3, pos[1]-0.3)
-        tags = utils.get_tags(tag_paths[index])
+        tags = utils.get_font_tags(tag_paths[index])
         annot_text.set_text(f"{fontname} {tags}")
 
 def hover(event):
