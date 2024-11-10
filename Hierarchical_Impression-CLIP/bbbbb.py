@@ -1,13 +1,15 @@
-original_list = [2, 2, 1, 4, 5, 3, 2, 5, 4]
-unique_numbers = {}
-new_list = []
+def has_duplicates(lst):
+    # リスト内のリストをタプルに変換し、セットに追加
+    seen = set()
+    for sublist in lst:
+        # サブリストをタプルに変換してセットに追加
+        sublist_tuple = tuple(sublist)
+        if sublist_tuple in seen:
+            return True  # 重複が見つかった場合
+        seen.add(sublist_tuple)
+    return False  # 重複なし
 
-# ユニークな数字に新しい番号を割り当て
-current_number = 0
-for num in original_list:
-    if num not in unique_numbers:
-        unique_numbers[num] = current_number
-        current_number += 1
-    new_list.append(unique_numbers[num])
-
-print(new_list)  # 出力: [2, 2, 1, 4, 5, 3] の変換結果を表示
+# 実行例
+my_list = [['happy', 'cool', 'serif'], ['happy', 'serif'], ['happy', 'cool']]
+result = has_duplicates(my_list)
+print(result)  # 重複あり → True

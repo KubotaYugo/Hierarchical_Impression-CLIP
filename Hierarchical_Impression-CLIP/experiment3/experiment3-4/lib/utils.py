@@ -23,7 +23,7 @@ NARROW_DOWN_INSTANCES = [True, False][0]
 
 BASE_DIR = f'{EXP}/LR={LR}_BS={BATCH_SIZE}_{LOSS_TYPE}_{NARROW_DOWN_INSTANCES}'
 MODEL_PATH = f'{BASE_DIR}/results/model/best.pth.tar'
-DATASET = ['train', 'val', 'test'][0]
+DATASET = ['train', 'val', 'test'][1]
 
 
 def fix_seed(seed):

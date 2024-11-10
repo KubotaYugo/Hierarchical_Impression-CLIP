@@ -139,7 +139,7 @@ class HierarchicalBatchSampler(Sampler):
         indices = torch.randperm(len(self.dataset), generator=g).tolist()
         remaining = copy.deepcopy(indices)
 
-        while len(remaining) > self.batch_size: # まだミニバッチを作れるなら実行
+        while len(remaining) >= self.batch_size: # まだミニバッチを作れるなら実行
             idx = remaining[torch.randint(len(remaining), (1,))]
             batch, visited, remaining = self.renew_state(idx, batch, visited, remaining, indices)
             

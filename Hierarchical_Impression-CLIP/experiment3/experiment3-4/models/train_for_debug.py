@@ -160,7 +160,7 @@ if __name__ == '__main__':
     LR = 1e-4
     BATCH_SIZE = 5
 
-    MODEL_PATH = utils.MODEL_PATH
+    MODEL_PATH = utils.FONT_AUTOENCODER_PATH
     IMG_CLUSTER_PATH = f'{EXP}/clustering/train/image_clusters.npz'
     TAG_CLUSTER_PATH = f'{EXP}/clustering/train/impression_clusters.npz'
 

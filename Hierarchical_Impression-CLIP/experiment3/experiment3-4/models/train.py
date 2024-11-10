@@ -53,7 +53,7 @@ def train(dataloader, models, criterion1, criterion2, optimizer, total_itr, save
 
     # Iterate over data
     # サンプリング方法の影響で, iteration数はepochごとに変わる(少しだけ)
-    # また，1epochで同じデータが複数回でてくることもある
+    # また，1epochで同じデータが複数回でてくることもある メモ: おそらく解決済み(要確認)
     loss_img_list = []
     loss_tag_list = []
     loss_list = []
@@ -161,7 +161,7 @@ def main(config=None):
         LR = config.lr
         BATCH_SIZE = config.batch_size
 
-        MODEL_PATH = utils.MODEL_PATH
+        FONT_AUTOENCODER_PATH = utils.FONT_AUTOENCODER_PATH
         IMG_CLUSTER_PATH = utils.IMG_CLUSTER_PATH
         TAG_CLUSTER_PATH = utils.TAG_CLUSTER_PATH
 
@@ -181,7 +181,7 @@ def main(config=None):
         # set model and optimized parameters
         device = torch.device('cuda:0')
         font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2, 2, 2, 2]).to(device)
-        font_autoencoder.load_state_dict(torch.load(MODEL_PATH))
+        font_autoencoder.load_state_dict(torch.load(FONT_AUTOENCODER_PATH))
         clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
         emb_i = MLP.ReLU().to(device)
         emb_t = MLP.ReLU().to(device)
@@ -301,16 +301,16 @@ if __name__ == '__main__':
         },
 
         'loss_type': {
-            'values': ['HMCE', 'HMC', 'HCE']
+            'values': ['HMCE']
         },
         'narrow_down_instances': {
-            'values': [True, False]
+            'values': [True]
         },
         'lr': {
             'values': [1e-4]
         },
         'batch_size': {
-            'values': [1024, 4096, 8192]
+            'values': [32]
         },
 
         'max_epoch': {

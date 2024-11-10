@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 
 # define constant
 EXP = 'Hierarchical_Impression-CLIP/experiment4/experiment4-1'
-z = 'FontAutoencoder/model/best.pt'
+FONTAUTOENCODER_PATH = 'FontAutoencoder/model/best.pt'
 IMG_HIERARCHY_PATH = 'image_clusters.npz'
 TAG_HIERARCHY_PATH = 'impression_clusters.npz'
 MAX_EPOCH = 10000

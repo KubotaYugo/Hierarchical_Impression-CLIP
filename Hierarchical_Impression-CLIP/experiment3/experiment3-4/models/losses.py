@@ -1,10 +1,3 @@
-'''
- * Copyright (c) 2022, salesforce.com, inc.
- * All rights reserved.
- * SPDX-License-Identifier: BSD-3-Clause
- * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-'''
-
 from __future__ import print_function
 
 import torch
@@ -65,7 +58,7 @@ class HMLC(nn.Module):
             elif self.loss_type=='HMC': 
                 layer_loss = layer_penalty * layer_loss_wo_penalty
             elif self.loss_type=='HCE':        
-                layer_loss = layer_penalty
+                layer_loss = layer_loss_wo_penalty  # メモ: ここミスってた(= layer_penaltyにしてた)
                 max_loss_lower_layer = torch.max(max_loss_lower_layer, pos_pair_loss_max)
             cumulative_loss += layer_loss
             layer_loss_list.append(layer_loss.item())
