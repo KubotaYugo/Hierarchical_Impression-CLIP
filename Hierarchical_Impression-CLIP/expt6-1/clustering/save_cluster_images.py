@@ -3,6 +3,7 @@
 '''
 import numpy as np
 import math
+from matplotlib.image import imsave
 
 import sys
 import os
@@ -10,7 +11,6 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 from lib import utils
 
-from matplotlib.image import imsave
 
 def save_tiled_images(image_list, tile_size=(10, 10), img_shape=(64, 64), output_path='tiled_image'):
     """
@@ -53,21 +53,19 @@ def save_tiled_images(image_list, tile_size=(10, 10), img_shape=(64, 64), output
 
 
 # define constant
-EXP = utils.EXP
-DATASET = 'train'
-IMG_CLUSTER_PATH = f'{EXP}/clustering/{DATASET}/image_clusters.npz'
-SAVE_DIR = f'{EXP}/clustering/cluster_visualization/PCA/{DATASET}'
-
+params = utils.get_parameters()
+EXPT = params['expt']
+DATASET = params['dataset']
+IMG_CLUSTER_PATH = params['img_cluster_path']
+NUM_IMG_CLUSTERS = params['num_img_clusters']
 
 # パス，ラベル(クラスタID)の取得
 img_paths, _ = utils.load_dataset_paths(DATASET)
 img_paths = np.asarray(img_paths)
 img_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-number_of_clusters = max(img_cluster_id)+1
 
-
-for i in range(number_of_clusters):
-    SAVE_DIR = f"{EXP}/clustering/cluster_images/{DATASET}/cluster{i}"
+for i in range(NUM_IMG_CLUSTERS):
+    SAVE_DIR = f'{EXPT}/clustering/save_cluster_imgs/{DATASET}/{NUM_IMG_CLUSTERS}/cluster{i}'
     os.makedirs(SAVE_DIR, exist_ok=True)
 
     img_path_cluster_i = img_paths[img_cluster_id==i]

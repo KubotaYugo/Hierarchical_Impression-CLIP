@@ -66,3 +66,19 @@ def calculate_inertia(X, labels):
         inertia += np.sum((cluster_points - centroid) ** 2)     # データポイントと重心の距離の二乗を計算し、合計
 
     return inertia
+
+
+def replace_label(label):
+    '''
+    [2, 2, 1, 4, 5, 3, 2, 5, 4] -> [0, 0, 1, 2, 3, 4, 0, 3, 2]
+    のように，リスト先頭から出てくる順に番号を振り直す
+    '''
+    unique_numbers = {}
+    replaced_label = []
+    current_number = 0
+    for num in label:
+        if num not in unique_numbers:
+            unique_numbers[num] = current_number
+            current_number += 1
+        replaced_label.append(unique_numbers[num])
+    return replaced_label

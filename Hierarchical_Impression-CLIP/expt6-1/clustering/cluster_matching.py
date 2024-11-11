@@ -2,7 +2,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import Counter
-from scipy.cluster.hierarchy import linkage, leaves_list
 
 import sys
 import os
@@ -19,26 +18,28 @@ def save_heatmap(data, fmt, filename):
     plt.savefig(filename, dpi=300)
     plt.close()
 
-params = utils.get_parameters()
-EXPT = params['expt']
-DATASET = 'val'
-IMG_CLUSTER_PATH = f'{EXPT}/clustering/clustering_img/{DATASET}/{params['num_img_clusters']}.npz'
-TAG_CLUSTER_PATH = f'{EXPT}/clustering/clustering_tag/{DATASET}/{params['num_tag_clusters']}.npz'
-SAVE_DIR = f'{EXPT}/clustering/pair_frequency_heatmap'
 
+params = utils.get_parameters()
+EXPT = params.expt
+DATASET = params.dataset
+TAG_PREPROCESS = params.tag_preprocess
+NUM_IMG_CLUSTERS = params.num_img_clusters
+NUM_TAG_CLUSTERS = params.num_tag_clusters
+IMG_CLUSTER_PATH = params.img_cluster_path
+TAG_CLUSTER_PATH = params.tag_cluster_path
+
+SAVE_DIR = f'{EXPT}/clustering/pair_frequency_heatmap/{TAG_PREPROCESS}/{NUM_IMG_CLUSTERS}_{NUM_TAG_CLUSTERS}'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-img_hierarchy = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-tag_hierarchy = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int64)
+img_cluster = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
+tag_cluster = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int64)
 
-# 同じインデックスの要素のペアを作成
-pairs = list(zip(img_hierarchy, tag_hierarchy))
-# ペアの頻度をカウント
-pair_count = Counter(pairs)
-# ペアの頻度をヒートマップ用の配列に反映
-heatmap = np.zeros((10, 10))
+pairs = list(zip(img_cluster, tag_cluster))     # 同じインデックスの要素のペアを作成
+pair_count = Counter(pairs)                     # ペアの頻度をカウント
+heatmap = np.zeros((10, 10))                    # ペアの頻度をヒートマップ用の配列に反映
 for (i, j), count in pair_count.items():
     heatmap[i][j] = count
+
 
 # ヒートマップを保存
 save_heatmap(heatmap, 'g', f'{SAVE_DIR}/{DATASET}_freq.png')

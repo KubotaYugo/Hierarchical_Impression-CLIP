@@ -1,10 +1,4 @@
-'''
-印象特徴をbisecting kmeansでクラスタリングした結果をtSNEで可視化
-'''
-
 import torch
-import os
-from torch.autograd import Variable
 import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -17,7 +11,6 @@ import sys
 import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
-from models import FontAutoencoder
 from lib import utils
 
 
@@ -54,40 +47,20 @@ def hover(event):
 
 
 # define constant
-EXP = utils.EXP
-AUTOENCODER_PATH = "FontAutoencoder/model/best.pt"
-DATASET = 'train'
-IMG_CLUSTER_PATH = f'{EXP}/clustering/{DATASET}/image_clusters.npz'
-SAVE_DIR = f'{EXP}/clustering/cluster_visualization/tSNE/{DATASET}'
+params = utils.get_parameters()
+EXPT = params['expt']
+DATASET = params['dataset']
+IMG_FEATURE_PATH = params['img_feature_path']
+IMG_CLUSTER_PATH = params['img_cluster_path']
+NUM_IMG_CLUSTERS = params['num_img_clusters']
 
+SAVE_DIR = f'{EXPT}/clustering/tSNE_img/{DATASET}'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-# データの準備
-img_paths, tag_paths = utils.load_dataset_paths(DATASET)
-dataset = utils.ImageDataset(img_paths)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=256, shuffle=False, num_workers = os.cpu_count(), pin_memory=True)
 
-# モデルの準備
-device = "cuda"
-model = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2, 2, 2, 2]).to(device)
-model.load_state_dict(torch.load(AUTOENCODER_PATH))
-model.eval()
-
-# 画像特徴の取得
-with torch.no_grad():
-    for i, data in enumerate(dataloader):
-        input_font = Variable(data).to(device)
-        font_feature = model.encoder(input_font)
-        if i==0:
-            font_features = font_feature.to("cpu").detach().numpy()
-        else:
-            font_features = np.concatenate([font_features, font_feature.to("cpu").detach().numpy()])
-
-# パス，ラベル(クラスタID)の取得
-img_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-number_of_clusters = max(img_cluster_id)+1
-
-# tSNE
+# 学習データでtSNE
+img_feature_path_train = f'{EXPT}/img_features/train.pth'
+img_features_train = torch.load(img_feature_path_train).to("cpu").detach().numpy()
 tSNE_filename = f'{SAVE_DIR}/image_cluster_tSNE_model.pkl'
 if os.path.exists(tSNE_filename):
     with open(tSNE_filename, 'rb') as f:
@@ -95,39 +68,42 @@ if os.path.exists(tSNE_filename):
     print("Loaded existing t-SNE model.")
 else:
     print("tSNE_start")
-    tSNE = TSNE(initialization="pca", metric="euclidean", n_jobs=20, random_state=7).fit(font_features)
+    tSNE = TSNE(initialization="pca", metric="euclidean", n_jobs=20, random_state=7).fit(img_features_train)
     with open(tSNE_filename, 'wb') as f:
         pickle.dump(tSNE, f)
     print("tSNE_end")
     print("Calculated and saved new t-SNE.")
-embedding = tSNE.transform(font_features)
-X = embedding[:, 0]
-Y = embedding[:, 1]
+
+# 画像特徴の取得&tSNE
+img_features = torch.load(IMG_FEATURE_PATH).to("cpu").detach().numpy()
+embedding = tSNE.transform(img_features)
+X = embedding[:,0]
+Y = embedding[:,1]
 
 # パス，ラベル(クラスタID)の取得
-tag_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-number_of_clusters = max(tag_cluster_id)+1
+img_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
+number_of_clusters = max(img_cluster_id)+1
 
 # プロット(マウスオーバーで画像と印象タグを表示)
 fig, ax = plt.subplots()
 patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f'{i}') for i in range(number_of_clusters)]
-sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(tag_cluster_id, dtype=np.int64)), 
+sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(img_cluster_id, dtype=np.int64)), 
                  alpha=0.8, edgecolors='w', linewidths=0.1, s=10)
 
+img_paths, tag_paths = utils.load_dataset_paths(DATASET)
 img = np.load(img_paths[0])["arr_0"][0]
 imagebox = OffsetImage(img, zoom=0.7, cmap='gray')
 imagebox.image.axes = ax
 annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords="data", boxcoords="offset points", pad=0,
-                        arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
+                           arrowprops=dict( arrowstyle="->", connectionstyle="arc3,rad=-0.3"))
 annot_img.set_visible(False)
 ax.add_artist(annot_img)
-
 annot_text = ax.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points", bbox=dict(boxstyle="round", fc="w"))
 annot_text.set_visible(False)
 
 fig.canvas.mpl_connect("motion_notify_event", hover)
 plt.legend(handles=patches)
 fig.set_size_inches(6.4*1.5, 4.8*1.5)
-plt.savefig(f'{SAVE_DIR}/image_cluste_before_embedding.png', bbox_inches='tight', dpi=500)
+plt.savefig(f'{SAVE_DIR}/{NUM_IMG_CLUSTERS}.png', bbox_inches='tight', dpi=300)
 # plt.show()
 plt.close()

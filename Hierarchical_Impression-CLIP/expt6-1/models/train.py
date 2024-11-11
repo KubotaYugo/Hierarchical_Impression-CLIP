@@ -1,4 +1,3 @@
-from transformers import CLIPTokenizer, CLIPModel
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -10,9 +9,8 @@ import csv
 import wandb
 import json
 
-from HierarchicalDataset import HierarchicalDataset, HierarchicalBatchSampler
+from HierarchicalDataset import HierarchicalDataset, HierarchicalBatchSampler, EvalDataset
 from HierarchicalClipLoss import calc_hierarchical_clip_loss, calc_loss_pair
-import FontAutoencoder
 import MLP
 import ExpMultiplier
 
@@ -49,11 +47,9 @@ class EarlyStopping:
             self.min_value = value
 
 
-def train(dataloader, models, temperature, criterions, weights, optimizer):
+def train(dataloader, models, temperature, criterions, weights, loss_type, optimizer, epoch):
     # one epoch training
-    font_autoencoder, clip_model, emb_i, emb_t = models
-    font_autoencoder.eval()
-    clip_model.eval()
+    emb_i, emb_t = models
     emb_i.train()
     emb_t.train()
 
@@ -63,70 +59,62 @@ def train(dataloader, models, temperature, criterions, weights, optimizer):
     loss_img_list = []
     loss_tag_list = []
     for idx, data in enumerate(dataloader):
-        imgs, tokenized_tags, img_labels, tag_labels = data
-        imgs, tokenized_tags, img_labels, tag_labels = imgs[0], tokenized_tags[0], img_labels[0], tag_labels[0]
-        imgs = imgs.cuda(non_blocking=True)
-        tokenized_tags = tokenized_tags.cuda(non_blocking=True)
+        img_features, tag_features, img_labels, tag_labels = data
+        img_features, tag_features, img_labels, tag_labels = img_features[0], tag_features[0], img_labels[0], tag_labels[0]
+        img_features = img_features.cuda(non_blocking=True)
+        tag_features = tag_features.cuda(non_blocking=True)
         img_labels = img_labels[:,0].cuda(non_blocking=True)
         tag_labels = tag_labels[:,0].cuda(non_blocking=True)
-
-        # prepare labels 
-        pair_labels = torch.arange(imgs.shape[0]).to('cuda')
-        img_labels_transformed = (img_labels.unsqueeze(0) == img_labels.unsqueeze(1)).float()
-        tag_labels_transformed = (tag_labels.unsqueeze(0) == tag_labels.unsqueeze(1)).float()
+        # prepare labels
+        pair_labels = torch.arange(img_features.shape[0]).to('cuda')
+        img_labels_transformed = (img_labels.unsqueeze(0)==img_labels.unsqueeze(1)).float()
+        tag_labels_transformed = (tag_labels.unsqueeze(0)==tag_labels.unsqueeze(1)).float()
         labels = [pair_labels, img_labels_transformed, tag_labels_transformed]
 
         # forward
-        with torch.no_grad():
-            img_features = font_autoencoder.encoder(imgs)
-            tag_features = clip_model.get_text_features(tokenized_tags)
         with torch.set_grad_enabled(True):
             # get model outputs
             embedded_img_features = emb_i(img_features)
             embedded_tag_features = emb_t(tag_features)
-            loss_total, loss_pair, loss_img, loss_tag = calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features,
-                                                                                    temperature, weights, criterions, labels)
+            losses = calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features,
+                                                 temperature, weights, criterions, labels, 
+                                                 loss_type, epoch)
+            loss_total, loss_pair, loss_img, loss_tag = losses
             # append loss to list
             loss_total_list.append(loss_total.item())
             loss_pair_list.append(loss_pair.item())
             loss_img_list.append(loss_img.item())
             loss_tag_list.append(loss_tag.item())
-
             # backward and optimize
             optimizer.zero_grad()
             loss_total.backward()
             optimizer.step()
     
+    # average losses
     aveloss_total = np.mean(loss_total_list)
     aveloss_pair = np.mean(loss_pair_list)
     aveloss_img = np.mean(loss_img_list)
     aveloss_tag = np.mean(loss_tag_list)
     loss_dict = {'total':aveloss_total, 'pair':aveloss_pair, 'img':aveloss_img, 'tag':aveloss_tag}
-
+    
     return loss_dict
 
 
 def val(dataloader, models, temperature, criterion_CE):
     # one epoch validation
-    font_autoencoder, clip_model, emb_i, emb_t = models
-    font_autoencoder.eval()
-    clip_model.eval()
+    emb_i, emb_t = models
     emb_i.eval()
     emb_t.eval()
 
     with torch.no_grad():
         # extruct embedded features
         for idx, data in enumerate(dataloader):
-            imgs, tokenized_tags = data
-            imgs = imgs.cuda(non_blocking=True)
-            tokenized_tags = tokenized_tags.cuda(non_blocking=True)
-
+            img_features, tag_features = data
+            img_features = img_features.cuda(non_blocking=True)
+            tag_features = tag_features.cuda(non_blocking=True)
             # forward
-            img_features = font_autoencoder.encoder(imgs)
-            tag_features = clip_model.get_text_features(tokenized_tags) 
             embedded_img_features = emb_i(img_features)
             embedded_tag_features = emb_t(tag_features)
-            
             if idx==0:
                 embedded_img_features_stack = embedded_img_features
                 embedded_tag_features_stack = embedded_tag_features
@@ -134,9 +122,8 @@ def val(dataloader, models, temperature, criterion_CE):
                 embedded_img_features_stack = torch.concatenate((embedded_img_features_stack, embedded_img_features), dim=0)
                 embedded_tag_features_stack = torch.concatenate((embedded_tag_features_stack, embedded_tag_features), dim=0)
         
-        
         loss_pair = calc_loss_pair(embedded_img_features_stack, embedded_tag_features_stack, temperature, criterion_CE)
-        
+
         # culculate Average Retrieval Rank
         similarity_matrix = torch.matmul(embedded_img_features_stack, embedded_tag_features_stack.T)
         ARR_tag2img = np.mean(eval_utils.retrieval_rank(similarity_matrix, "tag2img"))
@@ -147,28 +134,33 @@ def val(dataloader, models, temperature, criterion_CE):
     return ARR_dict, loss_pair.item()
 
 
-def main(config=None):
-    with wandb.init(config=config, dir=exp):
+def main(params):
+    with wandb.init(dir=f'{params['expt']}/co-embedding'):
         # parameter from config
         config = wandb.config
-        EXP = config.expt
+        EXPT = config.expt
         MAX_EPOCH = config.max_epoch
         EARLY_STOPPING_PATIENCE = config.early_stopping_patience
         LR = config.lr
         BATCH_SIZE = config.batch_size
         WEIGHTS = json.loads(config.weights)
+        TAG_PREPROCESS = config.tag_preprocess
+        LOSS_TYPE = config.loss_type
+        TEMPERATURE = config.temperature
         INITIAL_TEMPERATURE = config.initial_temperature
 
-        FONT_AUTOENCODER_PATH = utils.FONT_AUTOENCODER_PATH
-        IMG_CLUSTER_PATH = utils.IMG_CLUSTER_PATH
-        TAG_CLUSTER_PATH = utils.TAG_CLUSTER_PATH
+        NUM_IMG_CLUSTERS = params['num_img_clusters']
+        NUM_TAG_CLUSTERS = params['num_tag_clusters']
+        IMG_CLUSTER_PATH = f'{EXPT}/clustering/cluster_img/train/{NUM_IMG_CLUSTERS}.npz'
+        TAG_CLUSTER_PATH = f'{EXPT}/clustering/cluster_tag/train/{TAG_PREPROCESS}/{NUM_TAG_CLUSTERS}.npz'
 
         # make save directory
-        SAVE_DIR = f'{EXP}/LR={LR}_BS={BATCH_SIZE}_W={WEIGHTS}/results'
+        BASE_DIR = f'{EXPT}/co-embedding/LR={LR}_BS={BATCH_SIZE}_C=[{NUM_IMG_CLUSTERS}, {NUM_TAG_CLUSTERS}]_W={WEIGHTS}_{TAG_PREPROCESS}_{LOSS_TYPE}_{TEMPERATURE}_{INITIAL_TEMPERATURE}'
+        SAVE_DIR = f'{BASE_DIR}/results'
         os.makedirs(f'{SAVE_DIR}/model', exist_ok=True)
 
         # set run name and wandb dir
-        wandb.run.name = f'LR={LR}_BS={BATCH_SIZE}_W={WEIGHTS}'
+        wandb.run.name = f'LR={LR}_BS={BATCH_SIZE}_C=[{NUM_IMG_CLUSTERS}, {NUM_TAG_CLUSTERS}]_W={WEIGHTS}_{TAG_PREPROCESS}_{LOSS_TYPE}_{TEMPERATURE}_{INITIAL_TEMPERATURE}'
 
         # fix random numbers, set cudnn option
         utils.fix_seed(7)
@@ -177,13 +169,12 @@ def main(config=None):
 
         # set model and optimized parameters
         device = torch.device('cuda:0')
-        font_autoencoder = FontAutoencoder.Autoencoder(FontAutoencoder.ResidualBlock, [2, 2, 2, 2]).to(device)
-        font_autoencoder.load_state_dict(torch.load(FONT_AUTOENCODER_PATH))
-        clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
         emb_i = MLP.ReLU().to(device)
         emb_t = MLP.ReLU().to(device)
-        temperature = ExpMultiplier.ExpMultiplier(INITIAL_TEMPERATURE).to(device)
-        models = [font_autoencoder, clip_model, emb_i, emb_t]
+        # メモ: 温度パラメータも保存する & CLIPの論文に倣って実装してみる
+        if TEMPERATURE=='ExpMultiplier':
+            temperature = ExpMultiplier.ExpMultiplier(INITIAL_TEMPERATURE).to(device)
+        models = [emb_i, emb_t]
             
         # set optimizer, criterion
         optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters())+list(temperature.parameters()), lr=LR)
@@ -192,17 +183,18 @@ def main(config=None):
         criterions = [criterion_CE, criterion_BCE]
 
         # set dataloder, sampler for train
-        train_img_paths, train_tag_paths = utils.load_dataset_paths("train")
-        tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-        trainset = HierarchicalDataset(train_img_paths, train_tag_paths, IMG_CLUSTER_PATH, TAG_CLUSTER_PATH, tokenizer)
+        img_feature_path_train = f'{EXPT}/img_features/train.pth'
+        tag_feature_path_train = f'{EXPT}/tag_features/train/{TAG_PREPROCESS}.pth'
+        img_feature_path_val = f'{EXPT}/img_features/val.pth'
+        tag_feature_path_val = f'{EXPT}/tag_features/val/{TAG_PREPROCESS}.pth'
+        trainset = HierarchicalDataset(img_feature_path_train, tag_feature_path_train, IMG_CLUSTER_PATH, TAG_CLUSTER_PATH)
         sampler = HierarchicalBatchSampler(batch_size=BATCH_SIZE, dataset=trainset)
         trainloader = torch.utils.data.DataLoader(trainset, sampler=sampler, shuffle=False, num_workers=os.cpu_count(), batch_size=1, pin_memory=True)
         # to calcurate ARR
-        train_evalset = utils.EvalDataset(train_img_paths, train_tag_paths, tokenizer)
+        train_evalset = EvalDataset(img_feature_path_train, tag_feature_path_train)
         train_evalloader = torch.utils.data.DataLoader(train_evalset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), pin_memory=True)
         # for validation
-        val_img_paths, val_tag_paths = utils.load_dataset_paths("val")
-        valset = utils.EvalDataset(val_img_paths, val_tag_paths, tokenizer)
+        valset = EvalDataset(img_feature_path_val, tag_feature_path_val)
         valloader = torch.utils.data.DataLoader(valset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), pin_memory=True)
 
         # early stopping
@@ -216,7 +208,7 @@ def main(config=None):
 
             # training and validation
             sampler.set_epoch(epoch)
-            loss = train(trainloader, models, temperature, criterions, WEIGHTS, optimizer)
+            loss = train(trainloader, models, temperature, criterions, WEIGHTS, LOSS_TYPE, optimizer, epoch)
             ARR_train, _ = val(train_evalloader, models, temperature, criterion_CE)
             ARR_val, loss_pair_val = val(valloader, models, temperature, criterion_CE)
 
@@ -257,23 +249,23 @@ def main(config=None):
             if earlystopping.early_stop:
                 print("Early stopping")
                 filename = f'{SAVE_DIR}/model/checkpoint_{epoch:04d}.pth.tar'
-                save_contents = {'font_autoencoder':font_autoencoder.state_dict(), 'clip_model':clip_model.state_dict(),
-                                 'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 'optimizer':optimizer.state_dict()}
+                save_contents = {'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 
+                                 'temperature':temperature.state_dict(), 'optimizer':optimizer.state_dict()}
                 torch.save(save_contents, filename)
                 break
 
             # save models and optimizer every 500 epochs
             if epoch%500==0 and epoch!=0:
                 filename = f'{SAVE_DIR}/model/checkpoint_{epoch:04d}.pth.tar'
-                save_contents = {'font_autoencoder':font_autoencoder.state_dict(), 'clip_model':clip_model.state_dict(),
-                                 'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 'optimizer':optimizer.state_dict()}
+                save_contents = {'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 
+                                 'temperature':temperature.state_dict(), 'optimizer':optimizer.state_dict()}
                 torch.save(save_contents, filename)
             
             # save models and optimizer if renew the best meanARR
             if ARR_val['mean']<meanARR_best:
                 filename = f"{SAVE_DIR}/model/best.pth.tar"
-                save_contents = {'font_autoencoder':font_autoencoder.state_dict(), 'clip_model':clip_model.state_dict(),
-                                'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 'optimizer':optimizer.state_dict()}
+                save_contents = {'emb_i':emb_i.state_dict(), 'emb_t':emb_t.state_dict(), 
+                                 'temperature':temperature.state_dict(), 'optimizer':optimizer.state_dict()}
                 torch.save(save_contents, filename)
                 meanARR_best = ARR_val['mean']
         
@@ -281,26 +273,23 @@ def main(config=None):
         
         wandb.alert(
         title="WandBからの通知", 
-        text=f"R={LR}_BS={BATCH_SIZE}_W={WEIGHTS}が終了しました．"
+        text=f"LR={LR}_BS={BATCH_SIZE}_C=[{NUM_IMG_CLUSTERS}, {NUM_TAG_CLUSTERS}]_W={WEIGHTS}_{TAG_PREPROCESS}_{LOSS_TYPE}_{TEMPERATURE}_{INITIAL_TEMPERATURE}が終了しました．"
         )
 
 
 if __name__ == '__main__':
-
-    exp = utils.EXP
-    max_epoch = utils.MAX_EPOCH
-    early_stopping_patience = utils.EARLY_STOPPING_PATIENCE
-
+    params = utils.get_parameters()
+    
     sweep_configuration = {
     'method': 'grid',
-    'name': exp.replace('/', '_'),
+    'name': params['expt'].replace('/', '_'),
     'metric': {
         'goal': 'minimize',
         'name': 'meanARR_val_min',
     },
     'parameters': {
         'expt': {
-            'value': exp
+            'value': params['expt']
         },
         'lr': {
             'values': [1e-4]
@@ -308,23 +297,28 @@ if __name__ == '__main__':
         'batch_size': {
             'values': [8192]
         },
+        'weights': {    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
+            'values': ["[1.0, 1.0, 1.0]"] 
+        },
+        'tag_preprocess':{
+            'values': ['normal', 'average_single_tag', 'average_upto_10']
+        },
+        'loss_type':{
+            'values': ['average', 'iterative', 'label_and']
+        },
+        'temperature':{
+            'values': ['ExpMultiplier']
+        },
         'initial_temperature':{
             'values': [0.07]
         },
-        'weights': {    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
-            'values': ["[1.0, 1.0, 1.0]",
-                       "[1.0, 1.0, 0.0]",
-                       "[1.0, 0.0, 1.0]",
-                       "[0.0, 1.0, 0.0]",
-                       "[0.0, 0.0, 1.0]",] 
-        },
         'max_epoch': {
-            'value': max_epoch
+            'value': params['max_epoch']
         },
         'early_stopping_patience': {
-            'value': early_stopping_patience
+            'value': params['early_stopping_patience']
         },
     }
     }
-    sweep_id = wandb.sweep(sweep=sweep_configuration, project='Hierarchical_ImpressionCLIP_5-2')
-    wandb.agent(sweep_id, main)
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project='Hierarchical_ImpressionCLIP_6-1')
+    wandb.agent(sweep_id, function=lambda: main(params))

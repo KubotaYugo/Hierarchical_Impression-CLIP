@@ -3,22 +3,26 @@ import numpy as np
 import csv
 import random
 import argparse
-import itertools
+from dotmap import DotMap
+
 
 def get_parameters():
     params = {
         'expt':                     'Hierarchical_Impression-CLIP/expt6-1',
         'fontautoencoder_path':     'FontAutoencoder/model/best.pt',
         'max_epoch':                 10000,
-        'early_stopping_patience':   50,
+        'early_stopping_patience':   100,
         'num_img_clusters':          10,
         'num_tag_clusters':          10,
-        'learning_rate':             10000,
+        'learning_rate':             1e-4,
         'batch_size':                8192,
         'weights':                  [1.0, 1.0, 1.0],
         'dataset':                  ['train', 'val', 'test'][2],
-        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][0]
+        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][0],
+        'loss_type':                ['average', 'iterative'][0]
     }
+    params = DotMap(params)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--expt', type=str)
     parser.add_argument('--fontautoencoder_path', type=str)
@@ -31,18 +35,19 @@ def get_parameters():
     parser.add_argument('--weights', type=float, nargs='+')
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--tag_preprocess', type=str)
+    parser.add_argument('--loss_type', type=str)
     
     args = parser.parse_args()
     for key, value in vars(args).items():
         if value is not None:
             params[key] = value
-
-    params['base_dir'] = f'{params['expt']}/LR={params['learning_rate']}_BS={params['batch_size']}_C=[{params['num_img_clusters']}, {params['num_tag_clusters']}]_W={params['weights']}_{params['tag_preprocess']}'
-    params['model_path'] = f'{params['base_dir']}/results/model/best.pth.tar'
-    params['img_feature_path'] = f'{params['expt']}/img_features/{params['dataset']}.pth'
-    params['tag_feature_path'] = f'{params['expt']}/tag_features/{params['dataset']}/{params['tag_preprocess']}.pth'
-    params['img_cluster_path'] = f'{params['expt']}/clustering/img/{params['dataset']}/{params['num_img_clusters']}.npz'
-    params['tag_cluster_path'] = f'{params['expt']}/clustering/tag/{params['dataset']}/{params['tag_preprocess']}/{params['num_tag_clusters']}.npz'
+            
+    params.base_dir = f'{params.expt}/co-embedding/LR={params.learning_rate}_BS={params.batch_size}_C=[{params.num_img_clusters}, {params.num_tag_clusters}]_W={params.weights}_{params.tag_preprocess}_{params.loss_type}'
+    params.model_path = f'{params.base_dir}/results/model/best.pth.tar'
+    params.img_feature_path = f'{params.expt}/feature/img_feature/{params.dataset}.pth'
+    params.tag_feature_path = f'{params.expt}/feature/tag_feature/{params.dataset}/{params.tag_preprocess}.pth'
+    params.img_cluster_path = f'{params.expt}/clustering/cluster_img/{params.dataset}/{params.num_img_clusters}.npz'
+    params.tag_cluster_path = f'{params.expt}/clustering/cluster_tag/{params.dataset}/{params.tag_preprocess}/{params.num_tag_clusters}.npz'
 
     for key, value in params.items():
         print(f"{key}: {value}")
@@ -59,6 +64,7 @@ def fix_seed(seed):
     torch.cuda.manual_seed_all(seed)  # for multi-GPU
     torch.backends.cudnn.deterministic = True  # choose the determintic algorithm
 
+
 def load_dataset_paths(dataset):
     """
     datasetのフォントとタグのパスのリストを返す
@@ -69,6 +75,7 @@ def load_dataset_paths(dataset):
     image_paths = [f"dataset/MyFonts_preprocessed/font_numpy_Impression-CLIP/{dataset}/{font_name[0]}.npz" for font_name in font_names]
     tag_paths = [f"dataset/MyFonts_preprocessed/tag_txt/{dataset}/{font_name[0]}.csv" for font_name in font_names]
     return image_paths, tag_paths
+
 
 def get_fontnames(dataset):
     with open(f"dataset/MyFonts_preprocessed/tag_txt/fontname/{dataset}.csv") as f:
@@ -89,18 +96,6 @@ def get_tag_list():
     tag_freq = np.asarray(rows[:,2], dtype=np.int32)
     tag_list = rows[:,0][tag_freq>=50]
     return tag_list
-
-def padding_tags(tags_org, max_length=10):
-    tags = tags_org
-    while len(tags)+len(tags_org)<=max_length:
-        tags = tags+tags_org
-    all_combinations = itertools.product(tags_org, repeat=max_length-len(tags))
-    add = [list(p) for p in all_combinations if len(set(p)) == len(p)]
-    if add!=['']:
-        return_list = [tags+a for a in add]
-    else:
-        return_list = tags
-    return return_list
 
 # def get_tag_list():
 #     """

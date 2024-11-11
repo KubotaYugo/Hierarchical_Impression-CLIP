@@ -1,0 +1,7 @@
+・プログラムの実行順
+1. save_features/run_save_feature.sh
+2. clustering/bisecting_kmeans.sh
+3. clustering/evaluate_clustering_result.sh
+4. clustering/PCA.sh
+5. 
+6. 
