@@ -45,9 +45,9 @@ def get_parameters():
     params.base_dir = f'{params.expt}/co-embedding/LR={params.learning_rate}_BS={params.batch_size}_C=[{params.num_img_clusters}, {params.num_tag_clusters}]_W={params.weights}_{params.tag_preprocess}_{params.loss_type}'
     params.model_path = f'{params.base_dir}/results/model/best.pth.tar'
     params.img_feature_path = f'{params.expt}/feature/img_feature/{params.dataset}.pth'
-    params.tag_feature_path = f'{params.expt}/feature/tag_feature/{params.dataset}/{params.tag_preprocess}.pth'
-    params.img_cluster_path = f'{params.expt}/clustering/cluster_img/{params.dataset}/{params.num_img_clusters}.npz'
-    params.tag_cluster_path = f'{params.expt}/clustering/cluster_tag/{params.dataset}/{params.tag_preprocess}/{params.num_tag_clusters}.npz'
+    params.tag_feature_path = f'{params.expt}/feature/tag_feature/{params.tag_preprocess}/{params.dataset}.pth'
+    params.img_cluster_path = f'{params.expt}/clustering/cluster/img/{params.dataset}/{params.num_img_clusters}.npz'
+    params.tag_cluster_path = f'{params.expt}/clustering/cluster/tag/{params.tag_preprocess}/{params.dataset}/{params.num_tag_clusters}.npz'
 
     for key, value in params.items():
         print(f"{key}: {value}")
@@ -97,18 +97,12 @@ def get_tag_list():
     tag_list = rows[:,0][tag_freq>=50]
     return tag_list
 
-# def get_tag_list():
-#     """
-#     評価対象のタグをdictで返す
-#     """
-#     #　タグの取得(頻度順)
-#     with open(f"dataset/MyFonts_preprocessed/tag_freq_top10.csv") as f:
-#         reader = csv.reader(f)
-#         rows = np.asarray([row for row in reader])[1:]
-#     tag_freq = np.asarray(rows[:,2], dtype=np.int32)
-#     tag_list_org = rows[:,0][tag_freq>=50]
-#     # タグ番号→タグのdictを作成
-#     tag_list = {}
-#     for i, tag in enumerate(tag_list_org):
-#         tag_list[i] = tag
-#     return tag_list
+def save_list_to_csv(data_list, output_path):
+    '''
+    リストの各要素を1行としてCSVファイルに保存する。
+    :param data_list: リスト (各要素が1行として保存される)
+    :param output_path: 出力CSVファイルのパス
+    '''
+    with open(output_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(data_list)

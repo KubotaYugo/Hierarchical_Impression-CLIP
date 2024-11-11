@@ -3,9 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from sklearn.decomposition import PCA
-import pandas as pd
-import seaborn as sns
 from pathlib import Path
 import pickle
 
@@ -50,31 +47,15 @@ params = utils.get_parameters()
 EXPT = params.expt
 DATASET = params.dataset
 TAG_FEATURE_PATH = params.tag_feature_path
-TAG_CLUSTER_PATH = params.tag_cluster_path
-NUM_TAG_CLUSTERS = params.num_tag_clusters
 TAG_PREPROCESS = params.tag_preprocess
 
-SAVE_DIR = f'{EXPT}/clustering/PCA/tag/{TAG_PREPROCESS}/{DATASET}/{NUM_TAG_CLUSTERS}'
+SAVE_DIR = f'{EXPT}/clustering/PCA/tag_number_of_tag/{TAG_PREPROCESS}'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-
-# 学習データでPCA
-tag_feature_path_train = f'{EXPT}/feature/tag_feature/{TAG_PREPROCESS}/train.pth'
-tag_features_train = torch.load(tag_feature_path_train).to("cpu").detach().numpy()
-
+# 学習データでPCAしたものを読み込み
 PCA_filename = f'{EXPT}/clustering/PCA/tag/{TAG_PREPROCESS}/PCA_model.pkl'
-if os.path.exists(PCA_filename):
-    with open(PCA_filename, 'rb') as f:
-        pca = pickle.load(f)
-    print("Loaded existing PCA model.")
-else:
-    print("PCA_start")
-    pca = PCA(n_components=100)
-    pca.fit(tag_features_train)
-    with open(PCA_filename, 'wb') as f:
-        pickle.dump(pca, f)
-    print("PCA_uend")
-    print("Calculated and saved new PCA.")
+with open(PCA_filename, 'rb') as f:
+    pca = pickle.load(f)
 
 # 印象特徴の取得 & PCA
 tag_features = torch.load(TAG_FEATURE_PATH).to("cpu").detach().numpy()
@@ -82,33 +63,15 @@ embedding = pca.transform(tag_features)
 X = embedding[:,0]
 Y = embedding[:,1]
 
-# パス，ラベル(クラスタID)の取得
-tag_cluster_id = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-number_of_clusters = max(tag_cluster_id)+1
-
-# 第N主成分のうち2つの主成分を軸として特徴量分布を可視化
-N = 10
-df = pd.DataFrame(embedding[:, :N])
-df['cluste_id'] = tag_cluster_id
-sns.pairplot(df, hue="cluste_id", plot_kws={'s':2}, palette='tab10')
-plt.savefig(f'{SAVE_DIR}/PCA.png', bbox_inches='tight', dpi=300)
-plt.close()
-
-# 累積寄与率
-plt.plot([0] + list(np.cumsum(pca.explained_variance_ratio_)), "-o", markersize=3)
-plt.plot([0] + list(pca.explained_variance_ratio_), "-o", markersize=3)
-plt.xlim(0, 100)
-plt.ylim(0, 1.0)
-plt.xlabel("Number of principal components")
-plt.ylabel("Cumulative contribution rate")
-plt.grid()
-plt.savefig(f"{SAVE_DIR}/contribution_rate.png", bbox_inches='tight', dpi=300)
-plt.close()
+# タグの個数を取得
+_, tag_paths = utils.load_dataset_paths(DATASET)
+number_of_tags = [len(utils.get_font_tags(tag_path)) for tag_path in tag_paths]
+number_of_tags = np.asarray(number_of_tags)
 
 # プロット(マウスオーバーで画像と印象タグを表示)
 fig, ax = plt.subplots()
-patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f'{i}') for i in range(number_of_clusters)]
-sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(tag_cluster_id, dtype=np.int64)), 
+patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f'{i}') for i in range(max(number_of_tags))]
+sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(number_of_tags, dtype=np.int64)), 
                  alpha=0.8, edgecolors='w', linewidths=0.1, s=10)
 
 img_paths, tag_paths = utils.load_dataset_paths(DATASET)
@@ -125,6 +88,6 @@ annot_text.set_visible(False)
 fig.canvas.mpl_connect("motion_notify_event", hover)
 plt.legend(handles=patches)
 fig.set_size_inches(6.4*1.5, 4.8*1.5)
-plt.savefig(f'{SAVE_DIR}/PC1_PC2.png', bbox_inches='tight', dpi=300)
+plt.savefig(f'{SAVE_DIR}/{DATASET}.png', bbox_inches='tight', dpi=300)
 # plt.show()
 plt.close()

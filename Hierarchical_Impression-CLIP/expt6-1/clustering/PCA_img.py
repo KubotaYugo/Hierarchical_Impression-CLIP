@@ -60,7 +60,7 @@ os.makedirs(SAVE_DIR, exist_ok=True)
 img_feature_path_train = f'{EXPT}/feature/img_feature/train.pth'
 img_features_train = torch.load(img_feature_path_train).to("cpu").detach().numpy()
 
-PCA_filename = f'{SAVE_DIR}/PCA_model.pkl'
+PCA_filename = f'{EXPT}/clustering/PCA/img/PCA_model.pkl'
 if os.path.exists(PCA_filename):
     with open(PCA_filename, 'rb') as f:
         pca = pickle.load(f)
@@ -74,7 +74,7 @@ else:
     print("PCA_uend")
     print("Calculated and saved new PCA.")
 
-# 画像特徴の取得&PCA
+# 画像特徴の取得 & PCA
 img_features = torch.load(IMG_FEATURE_PATH).to("cpu").detach().numpy()
 embedding = pca.transform(img_features)
 X = embedding[:,0]

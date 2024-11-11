@@ -28,7 +28,7 @@ NUM_TAG_CLUSTERS = params.num_tag_clusters
 IMG_CLUSTER_PATH = params.img_cluster_path
 TAG_CLUSTER_PATH = params.tag_cluster_path
 
-SAVE_DIR = f'{EXPT}/clustering/pair_frequency_heatmap/{TAG_PREPROCESS}/{NUM_IMG_CLUSTERS}_{NUM_TAG_CLUSTERS}'
+SAVE_DIR = f'{EXPT}/clustering/pair_frequency_heatmap/{TAG_PREPROCESS}/{DATASET}/{NUM_IMG_CLUSTERS}_{NUM_TAG_CLUSTERS}'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 img_cluster = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
@@ -42,14 +42,14 @@ for (i, j), count in pair_count.items():
 
 
 # ヒートマップを保存
-save_heatmap(heatmap, 'g', f'{SAVE_DIR}/{DATASET}_freq.png')
+save_heatmap(heatmap, 'g', f'{SAVE_DIR}/freq.png')
 
 # 縦軸方向に正規化したヒートマップを保存
 column_sums = heatmap.sum(axis=0)
 normalized_heatmap_y = heatmap / column_sums[np.newaxis, :]
-save_heatmap(normalized_heatmap_y, '.2f', f'{SAVE_DIR}/{DATASET}_normalized_y.png')
+save_heatmap(normalized_heatmap_y, '.2f', f'{SAVE_DIR}/normalized_y.png')
 
 # 横軸方向に正規化したヒートマップを保存
 row_sums = heatmap.sum(axis=1)
 normalized_heatmap_x = heatmap / row_sums[:, np.newaxis]
-save_heatmap(normalized_heatmap_x, '.2f', f'{SAVE_DIR}/{DATASET}_normalized_x.png')
+save_heatmap(normalized_heatmap_x, '.2f', f'{SAVE_DIR}/normalized_x.png')
