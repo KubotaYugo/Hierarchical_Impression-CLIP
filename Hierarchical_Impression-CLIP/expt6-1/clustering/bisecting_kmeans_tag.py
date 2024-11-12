@@ -21,7 +21,7 @@ TAG_PREPROCESS = params.tag_preprocess
 TAG_FEATURE_PATH = params.tag_feature_path
 TAG_CLUSTER_PATH = params.tag_cluster_path
 
-NUMBER_OF_CLUSTERS_MAX = 10
+NUMBER_OF_CLUSTERS_MAX = 150
 N_ITER = 100  # bisecting kmeansを異なる初期値で繰り返す回数
 
 # 保存用ディレクトリの作成
@@ -35,7 +35,8 @@ standardizer = scaler.fit(tag_feature)
 standardized_tag_feature = standardizer.transform(tag_feature)
 
 # クラスタリング
-for NUMBER_OF_CLUSTERS in range(2, NUMBER_OF_CLUSTERS_MAX+1): 
+# for NUMBER_OF_CLUSTERS in range(2, NUMBER_OF_CLUSTERS_MAX+1):
+for NUMBER_OF_CLUSTERS in range(10+1, NUMBER_OF_CLUSTERS_MAX+1):
     # bisecting kmeans
     utils.fix_seed(7)
     best_inertia = np.inf

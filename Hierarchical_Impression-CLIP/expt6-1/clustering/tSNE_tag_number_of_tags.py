@@ -62,13 +62,13 @@ Y = embedding[:,1]
 # タグの個数を取得
 _, tag_paths = utils.load_dataset_paths(DATASET)
 number_of_tags = [len(utils.get_font_tags(tag_path)) for tag_path in tag_paths]
-number_of_tags = np.asarray(number_of_tags)
+number_of_tags = np.asarray(number_of_tags)-1
 
 # プロット(マウスオーバーで画像と印象タグを表示)
 fig, ax = plt.subplots()
-patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f'{i}') for i in range(max(number_of_tags))]
+patches = [mpatches.Patch(color=plt.cm.tab10(i), label=f'{i+1}') for i in range(max(number_of_tags)+1)]
 sc = plt.scatter(X, Y, c=plt.cm.tab10(np.asarray(number_of_tags, dtype=np.int64)), 
-                 alpha=0.8, edgecolors='w', linewidths=0.1, s=10)
+                 alpha=0.8, edgecolors='w', linewidths=0.1, s=5)
 
 img_paths, tag_paths = utils.load_dataset_paths(DATASET)
 img = np.load(img_paths[0])['arr_0'][0]

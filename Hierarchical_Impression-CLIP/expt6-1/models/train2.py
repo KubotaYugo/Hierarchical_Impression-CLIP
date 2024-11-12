@@ -301,23 +301,23 @@ if __name__ == '__main__':
             'values': [8192]
         },
         'weights': {    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
-            'values': ['[1.0, 1.0, 1.0]'] 
+            'values': ['[1.0, 0.0, 0.0]'] 
         },
         'tag_preprocess':{
             # 'values': ['normal', 'average_single_tag', 'average_upto_10']
-            'values': ['average_single_tag']
+            'values': ['normal', 'average_single_tag', 'average_upto_10']
         },
         'loss_type':{
             # 'values': ['average', 'iterative', 'label_and']
-            'values': ['iterative']
+            'values': ['average']
         },
         'temperature':{
-            'values': ['ExpMultiplier', 'ExpMultiplierLogit']
+            'values': ['ExpMultiplierLogit']
         },
         'ce_bce':{
             # 新しく追加 (この項目がないrunはすべて'BCE')
             # loss_imgとloss_tagをCE(クロスエントロピー)で計算するかBCE(バイナリクロスエントロピーで計算するかを指定)
-            'values': ['CE', 'BCE']
+            'values': ['CE']
         },
         'initial_temperature':{
             'values': [0.07]

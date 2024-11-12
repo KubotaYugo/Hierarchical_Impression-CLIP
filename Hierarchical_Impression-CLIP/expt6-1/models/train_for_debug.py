@@ -44,7 +44,7 @@ class EarlyStopping:
             self.min_value = value
 
 
-def train(dataloader, models, temperature, criterions, weights, loss_type, optimizer, epoch):
+def train(dataloader, models, temperature, criterions, weights, loss_type, ce_bce, optimizer, epoch):
     # one epoch training
     emb_i, emb_t = models
     emb_i.train()
@@ -75,7 +75,7 @@ def train(dataloader, models, temperature, criterions, weights, loss_type, optim
             embedded_tag_features = emb_t(tag_features)
             losses = calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features,
                                                  temperature, weights, criterions, labels, 
-                                                 loss_type, epoch)
+                                                 loss_type, ce_bce, epoch)
             loss_total, loss_pair, loss_img, loss_tag = losses
             # append loss to list
             loss_total_list.append(loss_total.item())
@@ -134,22 +134,24 @@ def val(dataloader, models, temperature, criterion_CE):
 if __name__ == '__main__':
     # parameter from config
     params = utils.get_parameters()
-    EXPT = params['expt']
-    MAX_EPOCH = params['max_epoch']
-    EARLY_STOPPING_PATIENCE = params['early_stopping_patience']
-    LR = params['learning_rate']
-    # BATCH_SIZE = params['batch_size']
-    BATCH_SIZE = 10
+    EXPT = params.expt
+    MAX_EPOCH = params.max_epoch
+    EARLY_STOPPING_PATIENCE = params.early_stopping_patience
+    LR = params.learning_rate
+    # BATCH_SIZE = params.batch_size.
+    BATCH_SIZE = 5
+    TEMPERATURE = ['ExpMultiplier', 'ExpMultiplierLogit'][1]
     INITIAL_TEMPERATURE = 0.07
-    WEIGHTS = params['weights']
+    WEIGHTS = params.weights
     TAG_PREPROCESS = ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][0]
     LOSS_TYPE = ['average', 'iterative', 'label_and'][2]
+    CE_BCE = ['CE', 'BCE'][1]
 
-    BASE_DIR = params['base_dir']
-    NUM_IMG_CLUSTERS = params['num_img_clusters']
-    NUM_TAG_CLUSTERS = params['num_tag_clusters']
-    IMG_CLUSTER_PATH = f'{EXPT}/clustering/cluster_img/train/{NUM_IMG_CLUSTERS}.npz'
-    TAG_CLUSTER_PATH = f'{EXPT}/clustering/cluster_tag/train/{TAG_PREPROCESS}/{NUM_TAG_CLUSTERS}.npz'
+    BASE_DIR = params.base_dir
+    NUM_IMG_CLUSTERS = params.num_img_clusters
+    NUM_TAG_CLUSTERS = params.num_tag_clusters
+    IMG_CLUSTER_PATH = f'{EXPT}/clustering/cluster/img/train/{NUM_IMG_CLUSTERS}.npz'
+    TAG_CLUSTER_PATH = f'{EXPT}/clustering/cluster/tag/{TAG_PREPROCESS}/train/{NUM_TAG_CLUSTERS}.npz'
 
 
     # fix random numbers, set cudnn option
@@ -161,9 +163,11 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     emb_i = MLP.ReLU().to(device)
     emb_t = MLP.ReLU().to(device)
-    # メモ: 温度パラメータも保存する & CLIPの論文に倣って実装してみる
-    temperature = ExpMultiplier.ExpMultiplier(INITIAL_TEMPERATURE).to(device)
     models = [emb_i, emb_t]
+    if TEMPERATURE=='ExpMultiplier':
+        temperature = ExpMultiplier.ExpMultiplier(INITIAL_TEMPERATURE).to(device)
+    elif TEMPERATURE=='ExpMultiplierLogit':
+        temperature = ExpMultiplier.ExpMultiplierLogit(INITIAL_TEMPERATURE).to(device)
         
     # set optimizer, criterion
     optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters())+list(temperature.parameters()), lr=LR)
@@ -172,10 +176,10 @@ if __name__ == '__main__':
     criterions = [criterion_CE, criterion_BCE]
 
     # set dataloder, sampler for train
-    img_feature_path_train = f'{EXPT}/img_features/train.pth'
-    tag_feature_path_train = f'{EXPT}/tag_features/train/{TAG_PREPROCESS}.pth'
-    img_feature_path_val = f'{EXPT}/img_features/val.pth'
-    tag_feature_path_val = f'{EXPT}/tag_features/val/{TAG_PREPROCESS}.pth'
+    img_feature_path_train = f'{EXPT}/feature/img_feature/train.pth'
+    tag_feature_path_train = f'{EXPT}/feature/tag_feature/{TAG_PREPROCESS}/train.pth'
+    img_feature_path_val = f'{EXPT}/feature/img_feature/val.pth'
+    tag_feature_path_val = f'{EXPT}/feature/tag_feature/{TAG_PREPROCESS}/val.pth'
     trainset = HierarchicalDataset(img_feature_path_train, tag_feature_path_train, IMG_CLUSTER_PATH, TAG_CLUSTER_PATH)
     sampler = HierarchicalBatchSampler(batch_size=BATCH_SIZE, dataset=trainset)
     trainloader = torch.utils.data.DataLoader(trainset, sampler=sampler, shuffle=False, num_workers=os.cpu_count(), batch_size=1, pin_memory=True)
@@ -197,7 +201,7 @@ if __name__ == '__main__':
 
         # training and validation
         sampler.set_epoch(epoch)
-        loss = train(trainloader, models, temperature, criterions, WEIGHTS, LOSS_TYPE, optimizer, epoch)
+        loss = train(trainloader, models, temperature, criterions, WEIGHTS, LOSS_TYPE, CE_BCE, optimizer, epoch)
         # ARR_train, _ = val(train_evalloader, models, temperature, criterion_CE)
         # ARR_val, loss_pair_val = val(valloader, models, temperature, criterion_CE)
 

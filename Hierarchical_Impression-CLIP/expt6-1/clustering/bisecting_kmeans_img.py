@@ -20,7 +20,7 @@ params = utils.get_parameters()
 IMG_FEATURE_PATH = params.img_feature_path
 IMG_CLUSTER_PATH = params.img_cluster_path
 
-NUMBER_OF_CLUSTERS_MAX = 10
+NUMBER_OF_CLUSTERS_MAX = 150
 N_ITER = 100  # bisecting kmeansを異なる初期値で繰り返す回数
 
 # 保存用ディレクトリの作成
@@ -34,7 +34,8 @@ standardizer = scaler.fit(img_feature)
 standardized_img_feature = standardizer.transform(img_feature)
 
 # クラスタリング
-for NUMBER_OF_CLUSTERS in range(2, NUMBER_OF_CLUSTERS_MAX+1): 
+# for NUMBER_OF_CLUSTERS in range(2, NUMBER_OF_CLUSTERS_MAX+1):
+for NUMBER_OF_CLUSTERS in range(10+1, NUMBER_OF_CLUSTERS_MAX+1):
     # bisecting kmeans
     utils.fix_seed(6)
     best_inertia = np.inf
