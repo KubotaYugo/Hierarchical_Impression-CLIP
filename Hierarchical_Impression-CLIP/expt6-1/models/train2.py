@@ -47,7 +47,7 @@ class EarlyStopping:
             self.min_value = value
 
 
-def train(dataloader, models, temperature, criterions, weights, loss_type, ce_bce, optimizer, epoch):
+def train(dataloader, models, temperature, criterions, weights, loss_type, ce_bce, optimizer, epoch, optimizer_temp):
     # one epoch training
     emb_i, emb_t = models
     emb_i.train()
@@ -86,9 +86,16 @@ def train(dataloader, models, temperature, criterions, weights, loss_type, ce_bc
             loss_img_list.append(loss_img.item())
             loss_tag_list.append(loss_tag.item())
             # backward and optimize
-            optimizer.zero_grad()
-            loss_total.backward()
-            optimizer.step()
+            if optimizer_temp==None:
+                optimizer.zero_grad()
+                loss_total.backward()
+                optimizer.step()
+            elif optimizer_temp!=None:
+                optimizer.zero_grad()
+                optimizer_temp.zero_grad()
+                loss_total.backward()
+                optimizer.step()         
+                optimizer_temp.step()
     
     # average losses
     aveloss_total = np.mean(loss_total_list)
@@ -176,11 +183,19 @@ def main(params):
         models = [emb_i, emb_t]
         if TEMPERATURE=='ExpMultiplier':
             temperature = ExpMultiplier.ExpMultiplier(INITIAL_TEMPERATURE).to(device)
-        elif TEMPERATURE=='ExpMultiplierLogit':
+        elif TEMPERATURE=='ExpMultiplierLogit' or TEMPERATURE=='ExpMultiplierLogit_wol' or TEMPERATURE=='ExpMultiplierLogit_sep':
             temperature = ExpMultiplier.ExpMultiplierLogit(INITIAL_TEMPERATURE).to(device)
                 
         # set optimizer, criterion
-        optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters())+list(temperature.parameters()), lr=LR)
+        if TEMPERATURE!='ExpMultiplierLogit_wol' and TEMPERATURE!='ExpMultiplierLogit_sep':
+            optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters())+list(temperature.parameters()), lr=LR)
+            optimizer_temp = None
+        elif TEMPERATURE=='ExpMultiplierLogit_wol':
+            optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters()), lr=LR)
+            optimizer_temp = None
+        elif TEMPERATURE=='ExpMultiplierLogit_sep':
+            optimizer = torch.optim.Adam(list(emb_i.parameters())+list(emb_t.parameters()), lr=LR)
+            optimizer_temp = torch.optim.Adam(list(temperature.parameters()), lr=LR)
         criterion_CE = nn.CrossEntropyLoss().to(device)
         criterion_BCE = nn.BCEWithLogitsLoss().to(device)
         criterions = [criterion_CE, criterion_BCE]
@@ -211,7 +226,7 @@ def main(params):
 
             # training and validation
             sampler.set_epoch(epoch)
-            loss = train(trainloader, models, temperature, criterions, WEIGHTS, LOSS_TYPE, CE_BCE, optimizer, epoch)
+            loss = train(trainloader, models, temperature, criterions, WEIGHTS, LOSS_TYPE, CE_BCE, optimizer, epoch, optimizer_temp)
             ARR_train, _ = val(train_evalloader, models, temperature, criterion_CE)
             ARR_val, loss_pair_val = val(valloader, models, temperature, criterion_CE)
 
@@ -305,18 +320,21 @@ if __name__ == '__main__':
         },
         'tag_preprocess':{
             # 'values': ['normal', 'average_single_tag', 'average_upto_10']
-            'values': ['normal', 'average_single_tag', 'average_upto_10']
+            'values': ['average_single_tag']
         },
         'loss_type':{
             # 'values': ['average', 'iterative', 'label_and']
             'values': ['average']
         },
         'temperature':{
-            'values': ['ExpMultiplierLogit']
+            # 'values': ['ExpMultiplier', 'ExpMultiplierLogit']
+            'values': ['ExpMultiplierLogit_wol']    # wol: without learning, sep: separate optimizer
+            # sepは意味がなさそう...　１つにまとめて学習するのと変わらない
         },
         'ce_bce':{
             # 新しく追加 (この項目がないrunはすべて'BCE')
             # loss_imgとloss_tagをCE(クロスエントロピー)で計算するかBCE(バイナリクロスエントロピーで計算するかを指定)
+            # 'values': ['CE', 'BCE']
             'values': ['CE']
         },
         'initial_temperature':{
@@ -331,7 +349,6 @@ if __name__ == '__main__':
     }
     }
     sweep_id = wandb.sweep(sweep=sweep_configuration, project='Hierarchical_ImpressionCLIP_6-1')
-    # sweep_id = '03e2qhdz'
     wandb.agent(sweep_id, function=lambda: main(params))
 
 # python programs/Hierarchical_Impression-CLIP/expt6-1/models/train.py

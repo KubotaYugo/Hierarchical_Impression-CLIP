@@ -1,0 +1,33 @@
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Current SDK version is 0.18.0
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Configure stats pid to 2587328
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Loading settings from /home/user/.config/wandb/settings
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Loading settings from /media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/wandb/settings
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Loading settings from environment variables: {'project': 'Hierarchical_ImpressionCLIP_6-2', 'entity': 'yugo-kubota-kyushu-university', 'root_dir': '/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs', 'run_id': '4z819x3m', 'sweep_param_path': '/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/wandb/sweep-357isnof/config-4z819x3m.yaml', 'sweep_id': '357isnof'}
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Applying setup settings: {'_disable_service': False}
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Inferring run settings from compute environment: {'program_relpath': 'Hierarchical_Impression-CLIP/expt6-2/models/train.py', 'program_abspath': '/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/Hierarchical_Impression-CLIP/expt6-2/models/train.py', 'program': '/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/Hierarchical_Impression-CLIP/expt6-2/models/train.py'}
+2024-11-22 21:02:50,056 INFO    Thread-5 (_run_job):2587328 [wandb_setup.py:_flush():77] Applying login settings: {}
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:_log_setup():525] Logging user logs to Hierarchical_Impression-CLIP/expt6-2/co-embedding/wandb/run-20241122_210250-4z819x3m/logs/debug.log
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:_log_setup():526] Logging internal logs to Hierarchical_Impression-CLIP/expt6-2/co-embedding/wandb/run-20241122_210250-4z819x3m/logs/debug-internal.log
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():609] calling init triggers
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():616] wandb.init called with sweep_config: {'batch_size': 8192, 'ce_bce': 'None', 'early_stopping_patience': 100, 'expt': 'Hierarchical_Impression-CLIP/expt6-2', 'initial_temperature': 0.07, 'learn_temperature': True, 'learning_rate': 0.0001, 'loss_type': 'None', 'max_epoch': 10000, 'num_img_clusters': 10, 'num_tag_clusters': 10, 'random_seed': 1, 'tag_preprocess': 'average_single_tag', 'temperature': 'ExpMultiplierLogit', 'weights': '[1.0, 0.0, 0.0]'}
+config: {}
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():659] starting backend
+2024-11-22 21:02:50,057 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():663] setting up manager
+2024-11-22 21:02:50,063 INFO    Thread-5 (_run_job):2587328 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2024-11-22 21:02:50,064 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():671] backend started and connected
+2024-11-22 21:02:50,073 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_config_callback():1393] config_cb None None {'batch_size': 8192, 'ce_bce': 'None', 'early_stopping_patience': 100, 'expt': 'Hierarchical_Impression-CLIP/expt6-2', 'initial_temperature': 0.07, 'learn_temperature': True, 'learning_rate': 0.0001, 'loss_type': 'None', 'max_epoch': 10000, 'num_img_clusters': 10, 'num_tag_clusters': 10, 'random_seed': 1, 'tag_preprocess': 'average_single_tag', 'temperature': 'ExpMultiplierLogit', 'weights': '[1.0, 0.0, 0.0]'}
+2024-11-22 21:02:50,073 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():766] updated telemetry
+2024-11-22 21:02:50,076 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():799] communicating run to backend with 90.0 second timeout
+2024-11-22 21:02:50,368 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():850] starting run threads in backend
+2024-11-22 21:02:50,434 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_console_start():2466] atexit reg
+2024-11-22 21:02:50,434 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_redirect():2312] redirect: wrap_raw
+2024-11-22 21:02:50,434 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_redirect():2377] Wrapping output streams.
+2024-11-22 21:02:50,434 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_redirect():2402] Redirects installed.
+2024-11-22 21:02:50,434 INFO    Thread-5 (_run_job):2587328 [wandb_init.py:init():893] run started, returning control to user process
+2024-11-22 21:02:50,445 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_finish():2163] finishing run yugo-kubota-kyushu-university/Hierarchical_ImpressionCLIP_6-2/4z819x3m
+2024-11-22 21:02:50,445 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_atexit_cleanup():2427] got exitcode: 1
+2024-11-22 21:02:50,445 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_restore():2409] restore
+2024-11-22 21:02:50,446 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_restore():2415] restore done
+2024-11-22 21:02:50,446 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_on_finish():2680] communicating current version
+2024-11-22 21:02:51,363 INFO    Thread-5 (_run_job):2587328 [wandb_run.py:_on_finish():2689] got version response upgrade_message: "There is a new version of wandb available. Please upgrade to wandb==0.18.5"
+

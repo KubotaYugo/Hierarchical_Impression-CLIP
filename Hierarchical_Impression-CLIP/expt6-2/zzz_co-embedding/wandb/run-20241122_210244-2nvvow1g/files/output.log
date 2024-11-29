@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/Hierarchical_Impression-CLIP/expt6-2/models/train.py", line 60, in main
+    {'params': emb_img.parameters(), 'lr': LEARNING_RATE[0]},
+                                           ~~~~~~~~~~~~~^^^
+TypeError: 'float' object is not subscriptable

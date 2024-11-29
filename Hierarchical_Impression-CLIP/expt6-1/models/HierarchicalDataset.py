@@ -182,6 +182,15 @@ class EvalDataset(Dataset):
     def __getitem__(self, idx):
         return self.img_feature[idx], self.tag_feature[idx]
 
+class SingleTagDataset(Dataset):
+    def __init__(self, single_tag_feature_path):
+        self.single_tag_feature = torch.load(single_tag_feature_path, map_location='cpu')
+    def __len__(self):
+        return len(self.single_tag_feature)
+    def __getitem__(self, idx):
+        return self.single_tag_feature[idx]
+
+
 
 class ImageDataset(Dataset):
     def __init__(self, img_paths):
@@ -204,20 +213,23 @@ class ImpressionDataset(Dataset):
         prompt = get_prompt(tags)
         return prompt
 
-class SingleTagDataset(Dataset):
-    def __init__(self, tag_list, tokenizer):
-        self.tag_list = tag_list
-        self.tokenizer = tokenizer
-    def __len__(self):
-        return len(self.tag_list)
-    def __getitem__(self, idx):
-        tag = self.tag_list[idx]
-        prompt = get_prompt([tag])
-        return prompt
-    def __len__(self):
-        return len(self.tag_list)
 
 
+
+
+
+# class SingleTagDataset(Dataset):
+#     def __init__(self, tag_list, tokenizer):
+#         self.tag_list = tag_list
+#         self.tokenizer = tokenizer
+#     def __len__(self):
+#         return len(self.tag_list)
+#     def __getitem__(self, idx):
+#         tag = self.tag_list[idx]
+#         prompt = get_prompt([tag])
+#         return prompt
+#     def __len__(self):
+#         return len(self.tag_list)
 
 # class ImpressionDataset(Dataset):
 #     def __init__(self, tag_paths, preprocess, tokenizer):

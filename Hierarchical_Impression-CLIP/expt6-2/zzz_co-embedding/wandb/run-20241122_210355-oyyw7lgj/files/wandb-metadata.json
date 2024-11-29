@@ -1,0 +1,43 @@
+{
+  "os":  "Linux-5.15.0-122-generic-x86_64-with-glibc2.35",
+  "python":  "3.12.2",
+  "startedAt":  "2024-11-22T12:03:55.775815Z",
+  "program":  "/media/user/0880c7a2-9e74-4110-a983-e8fd1fe49322/hierarchical-CLIP/programs/Hierarchical_Impression-CLIP/expt6-2/models/train.py",
+  "codePath":  "Hierarchical_Impression-CLIP/expt6-2/models/train.py",
+  "git":  {
+    "remote":  "https://github.com/KubotaYugo/Hierarchical_Impression-CLIP.git",
+    "commit":  "79dce93f55161211a83406f32a552c7574620e8a"
+  },
+  "email":  "yugo.kubota@human.ait.kyushu-u.ac.jp",
+  "root":  "Hierarchical_Impression-CLIP/expt6-2/co-embedding",
+  "host":  "localhost.localdomain",
+  "username":  "user",
+  "executable":  "/home/user/anaconda3/envs/myenv/bin/python",
+  "codePathLocal":  "Hierarchical_Impression-CLIP/expt6-2/models/train.py",
+  "cpu_count":  24,
+  "cpu_count_logical":  32,
+  "gpu":  "[NVIDIA RTX A6000]",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "965895782400",
+      "used":  "279223570432"
+    }
+  },
+  "memory":  {
+    "total":  "134792916992"
+  },
+  "cpu":  {
+    "count":  24,
+    "countLogical":  32
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA RTX A6000",
+      "memoryTotal":  "51527024640",
+      "cudaCores":  10752,
+      "architecture":  "Ampere"
+    }
+  ],
+  "cudaVersion":  "12.2"
+}

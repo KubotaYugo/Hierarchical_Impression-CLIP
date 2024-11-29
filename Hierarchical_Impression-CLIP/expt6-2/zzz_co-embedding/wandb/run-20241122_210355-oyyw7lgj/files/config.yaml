@@ -1,0 +1,53 @@
+_wandb:
+    value:
+        cli_version: 0.18.0
+        m: []
+        python_version: 3.12.2
+        t:
+            "1":
+                - 1
+                - 55
+            "2":
+                - 1
+                - 55
+            "3":
+                - 2
+                - 17
+                - 23
+                - 55
+            "4": 3.12.2
+            "5": 0.18.0
+            "8":
+                - 5
+            "12": 0.18.0
+            "13": linux-x86_64
+batch_size:
+    value: 8192
+ce_bce:
+    value: None
+early_stopping_patience:
+    value: 100
+expt:
+    value: Hierarchical_Impression-CLIP/expt6-2
+initial_temperature:
+    value: 0.07
+learn_temperature:
+    value: true
+learning_rate:
+    value: '[1e-4, 1e-4, 1e-4]'
+loss_type:
+    value: None
+max_epoch:
+    value: 10000
+num_img_clusters:
+    value: 10
+num_tag_clusters:
+    value: 10
+random_seed:
+    value: 1
+tag_preprocess:
+    value: normal
+temperature:
+    value: ExpMultiplierLogit
+weights:
+    value: '[1.0, 0.0, 0.0]'

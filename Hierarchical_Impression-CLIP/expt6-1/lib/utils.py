@@ -10,16 +10,19 @@ def get_parameters():
     params = {
         'expt':                     'Hierarchical_Impression-CLIP/expt6-1',
         'fontautoencoder_path':     'FontAutoencoder/model/best.pt',
-        'max_epoch':                 10000,
-        'early_stopping_patience':   100,
+        'max_epoch':                 10000,     # 固定
+        'early_stopping_patience':   100,       # 固定
         'num_img_clusters':          10,
         'num_tag_clusters':          10,
-        'learning_rate':             1e-4,
-        'batch_size':                8192,
+        'learning_rate':             1e-4,      # 固定
+        'batch_size':                8192,      # 固定
         'weights':                  [1.0, 1.0, 1.0],
         'dataset':                  ['train', 'val', 'test'][2],
-        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][0],
-        'loss_type':                ['average', 'iterative'][0]
+        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][1],
+        'loss_type':                ['average', 'iterative', 'label_and'][1],
+        'ce_bce':                   ['CE', 'BCE'][1],
+        'temperature':              ['ExpMultiplier', 'ExpMultiplierLogit'][1],
+        'initial_temperature':      [0.07][0]
     }
     params = DotMap(params)
 
@@ -36,18 +39,29 @@ def get_parameters():
     parser.add_argument('--dataset', type=str)
     parser.add_argument('--tag_preprocess', type=str)
     parser.add_argument('--loss_type', type=str)
+    parser.add_argument('--ce_bce', type=str)
+    parser.add_argument('--temperature', type=str)
+    parser.add_argument('--initial_temperature', type=float)
     
     args = parser.parse_args()
     for key, value in vars(args).items():
         if value is not None:
             params[key] = value
-            
-    params.base_dir = f'{params.expt}/co-embedding/LR={params.learning_rate}_BS={params.batch_size}_C=[{params.num_img_clusters}, {params.num_tag_clusters}]_W={params.weights}_{params.tag_preprocess}_{params.loss_type}'
+
+    # params.base_dir = f'{params.expt}/co-embedding/LR={params.learning_rate}_BS={params.batch_size}_C=[{params.num_img_clusters}, {params.num_tag_clusters}]_W={params.weights}_{params.tag_preprocess}_{params.loss_type}_{params.temperature}_{params.initial_temperature}'
+    params.base_dir = f'{params.expt}/co-embedding/LR={params.learning_rate}_BS={params.batch_size}_C=[{params.num_img_clusters}, {params.num_tag_clusters}]_W={params.weights}_{params.tag_preprocess}_{params.loss_type}_{params.ce_bce}_{params.temperature}_{params.initial_temperature}'
     params.model_path = f'{params.base_dir}/results/model/best.pth.tar'
+    
     params.img_feature_path = f'{params.expt}/feature/img_feature/{params.dataset}.pth'
     params.tag_feature_path = f'{params.expt}/feature/tag_feature/{params.tag_preprocess}/{params.dataset}.pth'
+    params.single_tag_feature_path = f'{params.expt}/feature/tag_feature/single_tag/{params.dataset}.pth'
+    
     params.img_cluster_path = f'{params.expt}/clustering/cluster/img/{params.dataset}/{params.num_img_clusters}.npz'
     params.tag_cluster_path = f'{params.expt}/clustering/cluster/tag/{params.tag_preprocess}/{params.dataset}/{params.num_tag_clusters}.npz'
+    
+    params.embedded_img_feature_path = f'{params.base_dir}/feature/embedded_img_feature/{params.dataset}.pth'
+    params.embedded_tag_feature_path = f'{params.base_dir}/feature/embedded_tag_feature/{params.dataset}.pth'
+    params.embedded_single_tag_feature_path = f'{params.base_dir}/feature/embedded_single_tag_feature/{params.dataset}.pth'
 
     for key, value in params.items():
         print(f"{key}: {value}")

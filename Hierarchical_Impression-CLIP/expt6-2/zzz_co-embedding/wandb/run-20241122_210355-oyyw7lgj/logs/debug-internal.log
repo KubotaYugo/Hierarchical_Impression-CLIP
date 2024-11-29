@@ -1,0 +1,13 @@
+{"time":"2024-11-22T21:03:55.777344518+09:00","level":"INFO","msg":"using version","core version":"0.18.0"}
+{"time":"2024-11-22T21:03:55.777357961+09:00","level":"INFO","msg":"created symlink","path":"Hierarchical_Impression-CLIP/expt6-2/co-embedding/wandb/run-20241122_210355-oyyw7lgj/logs/debug-core.log"}
+{"time":"2024-11-22T21:03:55.777379598+09:00","level":"INFO","msg":"using version","core version":"0.18.0"}
+{"time":"2024-11-22T21:03:55.777382091+09:00","level":"INFO","msg":"created symlink","path":"Hierarchical_Impression-CLIP/expt6-2/co-embedding/wandb/run-20241122_210355-oyyw7lgj/logs/debug-core.log"}
+{"time":"2024-11-22T21:03:55.778267643+09:00","level":"INFO","msg":"created new stream","id":"oyyw7lgj"}
+{"time":"2024-11-22T21:03:55.778277467+09:00","level":"INFO","msg":"stream: started","id":"oyyw7lgj"}
+{"time":"2024-11-22T21:03:55.778290235+09:00","level":"INFO","msg":"sender: started","stream_id":{"value":"oyyw7lgj"}}
+{"time":"2024-11-22T21:03:55.778296944+09:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"oyyw7lgj"}}
+{"time":"2024-11-22T21:03:55.778299008+09:00","level":"INFO","msg":"handler: started","stream_id":{"value":"oyyw7lgj"}}
+{"time":"2024-11-22T21:03:56.073765567+09:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-11-22T21:03:56.074764897+09:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-11-22T21:03:57.171645641+09:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-11-22T21:03:57.171970768+09:00","level":"INFO","msg":"Stopped system monitor"}
