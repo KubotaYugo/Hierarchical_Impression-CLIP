@@ -14,9 +14,13 @@ from lib import utils
 params = utils.get_parameters()
 EXPT = params.expt
 DATASET = params.dataset
+IMG_CLUSTER_PATH = params.img_cluster_path
 TAG_CLUSTER_PATH = params.tag_cluster_path
+NUM_IMG_CLUSTERS = params.num_img_clusters
 NUM_TAG_CLUSTERS = params.num_tag_clusters
 TAG_PREPROCESS = params.tag_preprocess
+BASE_SAVE_DIR = f'{EXPT}/clustering/cluster_imgs_new/num_img_cluster={NUM_IMG_CLUSTERS}_num_tag_cluster={NUM_TAG_CLUSTERS}'
+
 
 SAVE_DIR = f'{EXPT}/clustering/cluster_tags/{TAG_PREPROCESS}/{DATASET}/{NUM_TAG_CLUSTERS}'
 os.makedirs(SAVE_DIR, exist_ok=True)

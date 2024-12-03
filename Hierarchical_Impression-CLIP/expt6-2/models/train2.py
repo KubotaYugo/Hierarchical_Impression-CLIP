@@ -69,8 +69,8 @@ def main(params):
         # set dataloder, sampler for train
         trainset = HierarchicalDataset('train', EXPT, TAG_PREPROCESS, NUM_IMG_CLUSTERS, NUM_TAG_CLUSTERS)
         sampler = HierarchicalBatchSampler(batch_size=BATCH_SIZE, dataset=trainset)
-        trainloader = torch.utils.data.DataLoader(trainset, sampler=sampler, shuffle=False, 
-                                                num_workers=os.cpu_count(), batch_size=1, pin_memory=True)
+        trainloader = torch.utils.data.DataLoader(trainset, sampler=sampler, shuffle=False,
+                                                  num_workers=os.cpu_count(), batch_size=1, pin_memory=True)
         # train dataloder to calcurate ARR
         train_evalset = HierarchicalDatasetWithoutSampler('train', EXPT, TAG_PREPROCESS, NUM_IMG_CLUSTERS, NUM_TAG_CLUSTERS)
         train_evalloader = torch.utils.data.DataLoader(train_evalset, batch_size=BATCH_SIZE, shuffle=False, 
@@ -192,7 +192,7 @@ if __name__ == '__main__':
                 'values': [10]
             },
             'tag_preprocess':{
-                'values': ['normal', 'average_single_tag', 'average_upto_10']
+                'values': ['average_single_tag']
             },
             'temperature':{
                 'values': ['ExpMultiplierLogit']
@@ -201,19 +201,19 @@ if __name__ == '__main__':
                 'values': [True]
             },
             'initial_temperature':{
-                'values': [0.07]
+                'values': [0.15]
             },
             'loss_type':{
-                'values': ['average']
+                'values': ['label_and']
             },
             'ce_bce':{
                 'values': ['BCE']
             },
             'random_seed':{
-                'values': [4, 5]
+                'values': [1, 2, 3, 4, 5]
             },
             'weights': {
-                'values': ['[1.0, 0.0, 0.0]']
+                'values': ['[0.0, 0.5, 0.5]']
             },
         }
     }

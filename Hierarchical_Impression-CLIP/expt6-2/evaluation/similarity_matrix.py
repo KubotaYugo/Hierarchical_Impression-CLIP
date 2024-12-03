@@ -9,14 +9,15 @@ from lib import utils
 import seaborn as sns
 
 
-def save_similarity_matrix(embedded_img_feature=None, embedded_tag_feature=None, filename=None, ticks=None):
-    similarity_matrix = torch.matmul(embedded_img_feature, embedded_tag_feature.T).to("cpu").detach().numpy()
+def save_similarity_matrix(feature1=None, feature2=None, filename=None, 
+                           ticks=None, xlabel='Impression feature', ylabel='Image feature'):
+    similarity_matrix = torch.matmul(feature1, feature2.T).to("cpu").detach().numpy()
     sns.heatmap(similarity_matrix, cmap='viridis', square=True, 
                 cbar=True, vmin=np.min(similarity_matrix), vmax=np.max(similarity_matrix))
     plt.gca().xaxis.set_ticks_position('top') 
     plt.gca().xaxis.set_label_position('top') 
-    plt.xlabel('Impression feature')
-    plt.ylabel('Image feature')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.xticks([])
     plt.yticks([])
     if ticks!=None:
@@ -53,6 +54,12 @@ embedded_img_feature_sorted = embedded_img_feature[sorted_indices]
 embedded_tag_feature_sorted = embedded_tag_feature[sorted_indices]
 save_similarity_matrix(embedded_img_feature_sorted, embedded_tag_feature_sorted, 
                        f'{SAVE_DIR}/img_cluster.png', number_of_instance_cumulative)
+save_similarity_matrix(embedded_img_feature_sorted, embedded_img_feature_sorted, 
+                       f'{SAVE_DIR}/img2img_img_cluster.png', number_of_instance_cumulative,
+                       xlabel='Image feature', ylabel='Image feature')
+save_similarity_matrix(embedded_tag_feature_sorted, embedded_tag_feature_sorted, 
+                       f'{SAVE_DIR}/tag2tag_img_cluster.png', number_of_instance_cumulative,
+                       xlabel='Impression feature', ylabel='Impression feature')
 
 # 印象のクラスタでソート
 tag_cluster = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int16())
@@ -63,3 +70,9 @@ embedded_img_feature_sorted = embedded_img_feature[sorted_indices]
 embedded_tag_feature_sorted = embedded_tag_feature[sorted_indices]
 save_similarity_matrix(embedded_img_feature_sorted, embedded_tag_feature_sorted, 
                        f'{SAVE_DIR}/tag_cluster.png', number_of_instance_cumulative)
+save_similarity_matrix(embedded_img_feature_sorted, embedded_img_feature_sorted, 
+                       f'{SAVE_DIR}/img2img_tag_cluster.png', number_of_instance_cumulative,
+                       xlabel='Image feature', ylabel='Image feature')
+save_similarity_matrix(embedded_tag_feature_sorted, embedded_tag_feature_sorted, 
+                       f'{SAVE_DIR}/tag2tag_tag_cluster.png', number_of_instance_cumulative,
+                       xlabel='Impression feature', ylabel='Impression feature')

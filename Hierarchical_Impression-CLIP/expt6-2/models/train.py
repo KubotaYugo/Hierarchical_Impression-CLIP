@@ -204,18 +204,17 @@ if __name__ == '__main__':
                 'values': [0.15]
             },
             'loss_type':{
-                'values': ['average', 'iterative', 'label_and']
+                'values': ['average']
             },
             'ce_bce':{
                 'values': ['BCE']
             },
             'random_seed':{
-                'values': [1, 2, 3]
+                'values': [1, 2, 3, 4, 5]
             },
             'weights': {
-                'values': ['[1.0, 1.0, 1.0]',
-                           '[0.5, 1.0, 1.0]',
-                           '[1.0, 0.5, 0.5]']
+                'values': ['[0.0, 1.0, 0.0]',
+                           '[0.0, 0.0, 1.0]',]
             },
         }
     }

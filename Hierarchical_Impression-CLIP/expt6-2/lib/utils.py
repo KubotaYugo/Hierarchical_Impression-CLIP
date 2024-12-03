@@ -19,12 +19,12 @@ def get_parameters():
         'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10'][1],
         'temperature':              ['ExpMultiplier', 'ExpMultiplierLogit'][1],
         'learn_temperature':        [True, False][0],
-        'initial_temperature':      [0.02, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][0],
+        'initial_temperature':      [0.02, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][4],
         'loss_type':                ['average', 'iterative', 'label_and'][0],
         'ce_bce':                   ['CE', 'BCE'][1],
-        'weights':                  [1.0, 0.0, 0.0],    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
+        'weights':                  [1.0, 1.0, 1.0],    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
         'random_seed':              [1, 2, 3, 4, 5][0],
-        'dataset':                  ['train', 'val', 'test'][1],
+        'dataset':                  ['train', 'val', 'test'][0],
     }
     params = DotMap(params)
 

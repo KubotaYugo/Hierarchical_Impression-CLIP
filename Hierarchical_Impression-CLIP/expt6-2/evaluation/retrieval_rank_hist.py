@@ -22,7 +22,7 @@ def plot_retrival_rank(number_of_tags, RR, mode, SAVE_DIR):
     plt.hist(RR, bins=bins, edgecolor='black')
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
-    plt.ylim(0, 900)
+    # plt.ylim(0, 900)
     plt.savefig(f"{SAVE_DIR}/{mode}.png", dpi=300, bbox_inches='tight')
     plt.close()
 

@@ -47,31 +47,41 @@ def retrieval_rank_matrix(similarity_matrix, mode=None):
 def AP_tag2img(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths):
     similarity_matrix = torch.matmul(embedded_img_features, embedded_single_tag_features.T).to("cpu").detach().numpy()
     topk_args = np.argsort(-similarity_matrix, axis=0)
-    AP = [0]*len(embedded_single_tag_features)
-    for t in range(len(embedded_single_tag_features)):
-        p = []
-        count=0
-        for k in range(len(embedded_img_features)):
-            tags = utils.get_font_tags(tag_paths[topk_args[k][t]])
-            if tag_list[t] in tags:
-                count += 1
-                p.append(count/(k+1))
-        AP[t]= np.sum(p)/count
+    AP = []
+    all_tags = [utils.get_font_tags(tag_paths[i]) for i in range(len(tag_paths))]
+    for t, query_tag in enumerate(tag_list):
+        # Get the top-k indices for the current tag
+        top_indices = topk_args[:, t]
+        # Extract the tags corresponding to these indices
+        key_tags = [all_tags[i] for i in top_indices]
+        # Create a boolean mask for whether the target tag is in the relevant tags
+        match_mask = np.array([query_tag in tags for tags in key_tags])
+        # Compute precision at each rank
+        ranks = np.arange(1, len(match_mask) + 1)
+        precision_at_k = np.cumsum(match_mask) / ranks
+        # Filter precision values where there is a match
+        precision_at_relevant = precision_at_k[match_mask]
+        # Compute Average Precision (AP)
+        AP.append(np.mean(precision_at_relevant))
     return AP
 
 def AP_img2tag(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths):
     similarity_matrix = torch.matmul(embedded_img_features, embedded_single_tag_features.T).to("cpu").detach().numpy()
     topk_args = np.argsort(-similarity_matrix, axis=1)
-    AP = [0]*len(embedded_img_features)
-    for f in range(len(embedded_img_features)):
-        p = []
-        query_tags = utils.get_font_tags(tag_paths[f])
-        count=0
-        for k in range(len(embedded_single_tag_features)):
-            if tag_list[topk_args[f][k]] in query_tags:
-                count += 1
-                p.append(count/(k+1))
-        AP[f]= np.sum(p)/count
+    all_tags = [set(utils.get_font_tags(tag_paths[f])) for f in range(len(tag_paths))]
+    AP = []
+    for f, query_tags in enumerate(all_tags):
+        # Get the sorted tag indices for the current image
+        sorted_tag_indices = topk_args[f]
+        # Create a boolean mask for relevant tags
+        relevant_mask = [tag_list[idx] in query_tags for idx in sorted_tag_indices]
+        # Compute precision at each rank
+        ranks = np.arange(1, len(relevant_mask) + 1)
+        precision_at_k = np.cumsum(relevant_mask) / ranks
+        # Filter precision values where relevant tags exist
+        precision_at_relevant = precision_at_k[relevant_mask]
+        # Compute Average Precision (AP) for the current image
+        AP.append(np.mean(precision_at_relevant))
     return AP
 
 def save_fonts(fontlist, dataset, filename):
@@ -95,3 +105,34 @@ def save_fonts(fontlist, dataset, filename):
     with open(f'{filename}.csv', 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerows(write_rows)
+
+
+# def AP_tag2img(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths):
+#     similarity_matrix = torch.matmul(embedded_img_features, embedded_single_tag_features.T).to("cpu").detach().numpy()
+#     topk_args = np.argsort(-similarity_matrix, axis=0)
+#     AP = [0]*len(embedded_single_tag_features)
+#     for t in range(len(embedded_single_tag_features)):
+#         p = []
+#         count=0
+#         for k in range(len(embedded_img_features)):
+#             tags = utils.get_font_tags(tag_paths[topk_args[k][t]])
+#             if  tag_list[t] in tags:
+#                 count += 1
+#                 p.append(count/(k+1))
+#         AP[t]= np.sum(p)/count
+#     return AP
+
+# def AP_img2tag(embedded_img_features, embedded_single_tag_features, tag_list, tag_paths):
+#     similarity_matrix = torch.matmul(embedded_img_features, embedded_single_tag_features.T).to("cpu").detach().numpy()
+#     topk_args = np.argsort(-similarity_matrix, axis=1)
+#     AP = [0]*len(embedded_img_features)
+#     for f in range(len(embedded_img_features)):
+#         p = []
+#         query_tags = utils.get_font_tags(tag_paths[f])
+#         count=0
+#         for k in range(len(embedded_single_tag_features)):
+#             if tag_list[topk_args[f][k]] in query_tags:
+#                 count += 1
+#                 p.append(count/(k+1))
+#         AP[f]= np.sum(p)/count
+#     return AP
