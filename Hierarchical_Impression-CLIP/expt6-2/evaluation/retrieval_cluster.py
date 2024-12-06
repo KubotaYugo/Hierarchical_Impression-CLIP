@@ -108,7 +108,7 @@ similarity_matrix = torch.matmul(embedded_img_feature, embedded_tag_feature.T)
 RR_matrix_tag2img = eval_utils.retrieval_rank_matrix(similarity_matrix, 'tag2img')
 RR_matrix_img2tag = eval_utils.retrieval_rank_matrix(similarity_matrix, 'img2tag')
 
-# recall. precision, average precisionの計算
+# recall, precision, average precisionの計算
 metrics_tag2img = calc_metrics(RR_matrix_tag2img, img_cluster)
 metrics_img2tag = calc_metrics(RR_matrix_img2tag, tag_cluster)
 

@@ -16,7 +16,7 @@ def save_tiled_images(image_list=None, tile_size=(10, 10), img_shape=(64, 64), f
     '''
     画像リストからタイル状の画像を生成し、保存する。
     100枚ずつのタイル画像を生成し、N>100のときは複数ファイルに分けて保存する。
-    
+
     :param image_list: グレースケール画像のリスト (要素数N)
     :param tile_size: タイルのサイズ (rows, cols)
     :param img_shape: 各画像の形状 (height, width)

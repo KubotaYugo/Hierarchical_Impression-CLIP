@@ -20,11 +20,11 @@ def get_parameters():
         'temperature':              ['ExpMultiplier', 'ExpMultiplierLogit'][1],
         'learn_temperature':        [True, False][0],
         'initial_temperature':      [0.02, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][4],
-        'loss_type':                ['average', 'iterative', 'label_and'][0],
+        'loss_type':                ['average', 'iterative', 'label_and'][2],
         'ce_bce':                   ['CE', 'BCE'][1],
-        'weights':                  [1.0, 1.0, 1.0],    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
+        'weights':                  [1.0, 0.0, 0.0],    # WEIGHT_PAIR, WEIGHT_IMG, WEIGHT_TAG
         'random_seed':              [1, 2, 3, 4, 5][0],
-        'dataset':                  ['train', 'val', 'test'][0],
+        'dataset':                  ['train', 'val', 'test'][1],
     }
     params = DotMap(params)
 
@@ -107,6 +107,7 @@ def get_font_tags(tag_path):
     return tags
 
 def get_tag_list():
+    # trainの頻度順になってる
     with open(f"dataset/MyFonts_preprocessed/tag_freq_top10.csv") as f:
         reader = csv.reader(f)
         rows = np.asarray([row for row in reader])[1:]
@@ -123,3 +124,12 @@ def save_list_to_csv(data_list, output_path):
     with open(output_path, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(data_list)
+
+def get_image_to_save(img_path, char=None):
+    pad_h = np.ones(shape=(64, 1))*255
+    img = np.load(img_path)['arr_0'].astype(np.float32)
+    if char==None:
+        images = img[0]
+        for c in range(1,26):
+            images = np.hstack([images, pad_h, img[c]])
+    return images

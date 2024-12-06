@@ -8,9 +8,8 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-import pandas as pd
 import numpy as np
+import pickle
 
 import sys
 import os
@@ -27,8 +26,6 @@ def plot(x, y, color, name):
     color = color[sort_indices]
     scatter = plt.scatter(x, y, c=color, alpha=0.8, edgecolors='w', linewidths=0.1, s=1, cmap='jet')
     plt.colorbar(scatter)
-    # plt.xlim(x_min, x_max)
-    # plt.ylim(y_min, y_max)
     plt.savefig(f"{SAVE_DIR}/{name}.png", bbox_inches='tight', dpi=300)
     # plt.show()
     plt.close()
@@ -45,33 +42,18 @@ EMBEDDED_TAG_FEATURE_PATH = params.embedded_tag_feature_path
 SAVE_DIR = f"{BASE_DIR}/PCA_colored_by_pair"
 os.makedirs(f"{SAVE_DIR}", exist_ok=True)
 
-# PCAの準備 (学習データ)
-embedded_img_feature = torch.load(f'{BASE_DIR}/feature/embedded_img_feature/train.pth')
-embedded_tag_feature = torch.load(f'{BASE_DIR}/feature/embedded_tag_feature/train.pth')
-feature = torch.concatenate([embedded_img_feature, embedded_tag_feature], dim=0)
-feature = feature.to('cpu').detach().numpy().copy()
-pca = PCA(n_components=100)
-pca.fit(feature)
-
-# 埋め込み
-N = 5
-embedded_img_feature = torch.load(EMBEDDED_IMG_FEATURE_PATH)
-embedded_tag_feature = torch.load(EMBEDDED_TAG_FEATURE_PATH)
-feature = torch.concatenate([embedded_img_feature, embedded_tag_feature], dim=0)
-feature = feature.to('cpu').detach().numpy().copy()
-embedding = pca.transform(feature)
-df = pd.DataFrame(embedding[:, :N])
-df = df.assign(modal="img")
-t = len(embedded_img_feature)
-df.loc[t:, "modal"] = "tag"
-
-# 第1，第2主成分方向のプロット (画像特徴のy座標で色付け)
+# PCA特徴の読み込み
+PCA_feature_filename = f'{BASE_DIR}/PCA/{DATASET}/PCA_feature.pkl'
+with open(PCA_feature_filename, 'rb') as f:
+    embedding = pickle.load(f)
 X = embedding[:,0]
 Y = embedding[:,1]
-image_x = X[:len(embedded_img_feature)]
-image_y = Y[:len(embedded_img_feature)]
-tag_x = X[len(embedded_img_feature):]
-tag_y = Y[len(embedded_img_feature):]
+
+# 第1，第2主成分方向のプロット (画像特徴のy座標で色付け)
+image_x = X[:int(len(X)/2)]
+image_y = Y[:int(len(X)/2)]
+tag_x = X[int(len(X)/2):]
+tag_y = Y[int(len(X)/2):]
 plot(X, Y, np.tile(image_y, 2), f'{DATASET}')
 plot(image_x, image_y, image_y, f'{DATASET}_img')
 plot(tag_x, tag_y, image_y, f'{DATASET}_tag')

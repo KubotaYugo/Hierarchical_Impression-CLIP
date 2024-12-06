@@ -10,16 +10,6 @@ sys.path.append(parent_dir)
 from lib import utils
 
 
-def get_image_to_save(img_path, char=None):
-    pad_h = np.ones(shape=(64, 1))*255
-    img = np.load(img_path)['arr_0'].astype(np.float32)
-    if char==None:
-        images = img[0]
-        for c in range(1,26):
-            images = np.hstack([images, pad_h, img[c]])
-    return images
-
-
 def retrieve_imp_img(img_features, tag_features, img_paths, tag_paths, direction, mode, k_max, save_dir):
     
     def metrics(query_tags, tags):
@@ -60,7 +50,7 @@ def retrieve_imp_img(img_features, tag_features, img_paths, tag_paths, direction
     # 検索結果を保存
     for t in range(len(tag_features)):
         # クエリの画像をリストに追加
-        query_img = get_image_to_save(img_paths[t])
+        query_img = utils.get_image_to_save(img_paths[t])
         output_img_list = [query_img]
         # クエリのタグをリストに追加
         font_name = os.path.basename(tag_paths[t])[:-4]
@@ -73,7 +63,7 @@ def retrieve_imp_img(img_features, tag_features, img_paths, tag_paths, direction
         # キーの画像，タグをリストに追加
         for k in range(k_max):
             # キーの画像をリストに追加
-            key_img = get_image_to_save(img_paths[similarity_topk_args[k][t]])
+            key_img = utils.get_image_to_save(img_paths[similarity_topk_args[k][t]])
             pad_v = np.ones(shape=(3, key_img.shape[1]))*255
             output_img_list.extend([pad_v, key_img])
             # キーのタグをリストに追加
@@ -109,7 +99,7 @@ def retrieve_tag2img(img_features, single_tag_features, img_paths, tag_paths, ta
         write_row_list = []
         for k in range(k_max):        
             # キーの画像をリストに追加
-            key_img = get_image_to_save(img_paths[similarity_topk_args[k][t]])
+            key_img = utils.get_image_to_save(img_paths[similarity_topk_args[k][t]])
             pad_v = np.ones(shape=(3, key_img.shape[1]))*255
             output_img_list.extend([pad_v, key_img])
             # キーのタグをリストに追加

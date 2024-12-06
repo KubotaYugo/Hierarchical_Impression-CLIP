@@ -16,10 +16,13 @@ from lib import utils
 params = utils.get_parameters()
 EXPT = params.expt
 DATASET = params.dataset
+IMG_CLUSTER_PATH = params.img_cluster_path
 TAG_CLUSTER_PATH = params.tag_cluster_path
+NUM_IMG_CLUSTERS = params.num_img_clusters
 NUM_TAG_CLUSTERS = params.num_tag_clusters
 TAG_PREPROCESS = params.tag_preprocess
 
+# ディレクトリの作成
 SAVE_DIR = f'{EXPT}/clustering/tag_freq/{TAG_PREPROCESS}/{DATASET}/{NUM_TAG_CLUSTERS}'
 os.makedirs(SAVE_DIR, exist_ok=True)
 

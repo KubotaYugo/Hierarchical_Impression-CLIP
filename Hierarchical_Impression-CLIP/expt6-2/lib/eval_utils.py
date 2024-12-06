@@ -38,6 +38,7 @@ def retrieval_rank_matrix(similarity_matrix, mode=None):
         mode:
             mode=="img2tag": 画像から印象を検索
             mode=="tag2img": 印象から画像を検索
+    sorted_index[i][j]は, データiをクエリとして検索したときのj番目の検索結果のインデックス
     """
     if mode=="tag2img":
         similarity_matrix = similarity_matrix.T

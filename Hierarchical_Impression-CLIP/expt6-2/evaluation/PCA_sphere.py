@@ -70,13 +70,13 @@ scatter = ax.scatter(x, y, z, c=list(img_z)*2, alpha=0.8, edgecolors='w', linewi
 plt.show()
 plt.close()
 
+img_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
+tag_cluster_id = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int64)
 # 画像/印象それぞれのクラスタで色分け
 for ANNOTATE_WITH in ['img', 'tag']:
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection='3d')
     ax = plot_guide(ax)
-    img_cluster_id = np.load(IMG_CLUSTER_PATH)["arr_0"].astype(np.int64)
-    tag_cluster_id = np.load(TAG_CLUSTER_PATH)["arr_0"].astype(np.int64)
     if ANNOTATE_WITH=='img':
         labels = list(img_cluster_id*2)+list(img_cluster_id*2+1)
     elif ANNOTATE_WITH=='tag':

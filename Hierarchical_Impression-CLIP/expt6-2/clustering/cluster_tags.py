@@ -19,24 +19,30 @@ TAG_CLUSTER_PATH = params.tag_cluster_path
 NUM_IMG_CLUSTERS = params.num_img_clusters
 NUM_TAG_CLUSTERS = params.num_tag_clusters
 TAG_PREPROCESS = params.tag_preprocess
-BASE_SAVE_DIR = f'{EXPT}/clustering/cluster_imgs_new/num_img_cluster={NUM_IMG_CLUSTERS}_num_tag_cluster={NUM_TAG_CLUSTERS}'
-
-
-SAVE_DIR = f'{EXPT}/clustering/cluster_tags/{TAG_PREPROCESS}/{DATASET}/{NUM_TAG_CLUSTERS}'
-os.makedirs(SAVE_DIR, exist_ok=True)
+BASE_SAVE_DIR = f'{EXPT}/clustering/cluster_tags_new/num_img_cluster={NUM_IMG_CLUSTERS}_num_tag_cluster={NUM_TAG_CLUSTERS}'
 
 # パス，ラベル(クラスタID)の取得
 _, tag_paths = utils.load_dataset_paths(DATASET)
 tag_paths = np.asarray(tag_paths)
+img_cluster_id = np.load(IMG_CLUSTER_PATH)['arr_0'].astype(np.int64)
 tag_cluster_id = np.load(TAG_CLUSTER_PATH)['arr_0'].astype(np.int64)
 
-# クラスタ別のタグのリストを作成
-tags_list_cluster = []
+# 印象クラスタ別にタグのリストを保存 (フォント名も)
+SAVE_DIR = f'{BASE_SAVE_DIR}/{TAG_PREPROCESS}/tag_cluster/{DATASET}'
+os.makedirs(SAVE_DIR, exist_ok=True)
 for i in range(NUM_TAG_CLUSTERS):
-    tag_path_cluster_i = tag_paths[tag_cluster_id==i]
-    tags_list = [utils.get_font_tags(tag_path) for tag_path in tag_path_cluster_i]
-    tags_list_cluster.append(tags_list)
+    for j in range(NUM_IMG_CLUSTERS):
+        mask = (tag_cluster_id==i)*(img_cluster_id==j)
+        tag_path_cluster_ij = tag_paths[mask]
+        tags_list = [[os.path.splitext(os.path.basename(tag_path))[0]]+utils.get_font_tags(tag_path) for tag_path in tag_path_cluster_ij]
+        utils.save_list_to_csv(tags_list, f'{SAVE_DIR}/[tag_cluster, img_cluster]=[{i+1}, {j+1}].csv')
 
-# クラスタ別に印象タグを保存
-for i in range(NUM_TAG_CLUSTERS):
-    utils.save_list_to_csv(tags_list_cluster[i], f'{SAVE_DIR}/cluster{i}.csv')
+# 画像クラスタ別にタグのリストを保存 (フォント名も)
+SAVE_DIR = f'{BASE_SAVE_DIR}/{TAG_PREPROCESS}/img_cluster/{DATASET}'
+os.makedirs(SAVE_DIR, exist_ok=True)
+for i in range(NUM_IMG_CLUSTERS):
+    for j in range(NUM_TAG_CLUSTERS):
+        mask = (img_cluster_id==i)*(tag_cluster_id==j)
+        tag_path_cluster_ij = tag_paths[mask]
+        tags_list = [[os.path.splitext(os.path.basename(tag_path))[0]]+utils.get_font_tags(tag_path) for tag_path in tag_path_cluster_ij]
+        utils.save_list_to_csv(tags_list, f'{SAVE_DIR}/[img_cluster, tag_cluster]=[{i+1}, {j+1}].csv')

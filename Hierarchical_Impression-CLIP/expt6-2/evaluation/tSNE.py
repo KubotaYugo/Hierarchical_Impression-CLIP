@@ -102,10 +102,10 @@ else:
     np.savez_compressed(tSNE_feature_filename, tSNE_embedding)
     print('tSNE embedding end')
     print('Calculated and saved new tSNE feature.')
-X = tSNE_embedding[:, 0]
-Y = tSNE_embedding[:, 1]
 
 # モダリティ(画像/印象)で色分けしてプロット
+X = tSNE_embedding[:, 0]
+Y = tSNE_embedding[:, 1]
 fig, ax = plt.subplots(figsize=(6.4*1.5, 4.8*1.5))
 modality = ['img', 'tag']
 patches = [mpatches.Patch(color=plt.cm.tab10(i), label=modality[i]) for i in range(2)]
@@ -132,15 +132,20 @@ for ANNOTATE_WITH in ['img', 'tag']:
 
     if ANNOTATE_WITH=='img':
         labels = list(img_cluster_id*2)+list(img_cluster_id*2+1)
+        modality = ['img', 'tag']
     elif ANNOTATE_WITH=='tag':
         labels = list(tag_cluster_id*2)+list(tag_cluster_id*2+1)
-    modality = ['img', 'tag']
+        modality = ['tag', 'img']
+        t = int(len(tSNE_embedding)/2)
+        tSNE_embedding = np.concatenate([tSNE_embedding[t:], tSNE_embedding[:t]], axis=0)
+    X = tSNE_embedding[:, 0]
+    Y = tSNE_embedding[:, 1]
     patches = [mpatches.Patch(color=plt.cm.tab20(i), label=f'cluster{i//2}_{modality[i%2]}') for i in range(20)]
     sc = plt.scatter(X, Y, c=plt.cm.tab20(np.asarray(labels, dtype=np.int64)), 
-                        alpha=0.8, edgecolors='w', linewidths=0.1, s=5)
+                    alpha=0.8, edgecolors='w', linewidths=0.1, s=4)
     
     annot_img = AnnotationBbox(imagebox, xy=(0,0), xycoords='data', boxcoords='offset points', pad=0,
-                            arrowprops=dict( arrowstyle='->', connectionstyle='arc3,rad=-0.3'))
+                               arrowprops=dict( arrowstyle='->', connectionstyle='arc3,rad=-0.3'))
     annot_img.set_visible(False)
     ax.add_artist(annot_img)
 

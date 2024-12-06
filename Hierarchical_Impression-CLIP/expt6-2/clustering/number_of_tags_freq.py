@@ -62,6 +62,16 @@ for i in range(NUM_TAG_CLUSTERS):
     plt.savefig(f'{SAVE_DIR}/cluster{i}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
+# トータルのタグの個数の頻度をプロット
+number_of_tags_frequency_list_temp = np.asarray(number_of_tags_frequency_list) 
+plt.bar(categories, np.sum(number_of_tags_frequency_list_temp, axis=0), edgecolor='black', width=1)
+plt.xticks(ticks=[x+1 for x in range(number_of_tags_max)], labels=categories)
+plt.xlim(0, number_of_tags_max+1)
+plt.xlabel(f'Number of tags in impression cluster{i}')
+plt.ylabel('Frequency')
+plt.savefig(f'{SAVE_DIR}/total.png', dpi=300, bbox_inches='tight')
+plt.close()
+
 # クラスタ別の印象タグの個数の頻度をcsvで保存
 write_rows = copy.copy(number_of_tags_frequency_list)
 for i, sublist in enumerate(write_rows):

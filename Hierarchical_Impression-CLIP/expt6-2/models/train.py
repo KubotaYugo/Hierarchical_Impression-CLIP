@@ -210,11 +210,10 @@ if __name__ == '__main__':
                 'values': ['BCE']
             },
             'random_seed':{
-                'values': [1, 2, 3, 4, 5]
+                'values': [4]
             },
             'weights': {
-                'values': ['[0.0, 1.0, 0.0]',
-                           '[0.0, 0.0, 1.0]',]
+                'values': ['[1.0, 0.0, 0.0]']
             },
         }
     }

@@ -1,11 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from sklearn.decomposition import PCA
-import pandas as pd
-import seaborn as sns
 import pickle
 
 import sys

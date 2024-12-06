@@ -8,7 +8,7 @@ sys.path.append(parent_dir)
 from lib import utils
 from lib import eval_utils
 import models.ExpMultiplier as ExpMultiplier
-from models.HierarchicalClipLoss import calc_hierarchical_clip_loss, calc_hierarchical_clip_loss_eval
+from models.HierarchicalClipLoss import calc_hierarchical_clip_loss_eval
 
 # define constant
 params = utils.get_parameters()
@@ -63,7 +63,6 @@ criterions = [criterion_CE, criterion_BCE]
 # ロス計算
 loss_without_temperature, loss_with_temperature = \
 calc_hierarchical_clip_loss_eval(embedded_img_feature, embedded_tag_feature, temperature, WEIGHTS, criterions, labels, CE_BCE)
-
 
 # 結果の表示
 print('----------ロス(温度なし)----------')
