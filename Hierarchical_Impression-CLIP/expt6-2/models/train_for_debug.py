@@ -23,6 +23,7 @@ if __name__ == '__main__':
     EARLY_STOPPING_PATIENCE = params.early_stopping_patience
     LEARNING_RATE = params.learning_rate
     BATCH_SIZE = params.batch_size
+    # BATCH_SIZE = 5
     NUM_IMG_CLUSTERS = params.num_img_clusters
     NUM_TAG_CLUSTERS = params.num_tag_clusters
     TAG_PREPROCESS = params.tag_preprocess
@@ -31,6 +32,7 @@ if __name__ == '__main__':
     INITIAL_TEMPERATURE = params.initial_temperature
     LOSS_TYPE = params.loss_type
     CE_BCE = params.ce_bce
+    CE_BCE = 'SupCon'
     WEIGHTS = params.weights
     RANDOM_SEED = params.random_seed
 

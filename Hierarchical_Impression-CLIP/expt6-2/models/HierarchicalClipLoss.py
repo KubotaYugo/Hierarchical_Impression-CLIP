@@ -1,8 +1,23 @@
 import torch
 
 
+def SupConLoss(logits, label):
+    # for numerical stability
+    logits_max, _ = torch.max(logits, dim=1, keepdim=True)
+    logits = logits - logits_max.detach()
+    # compute log_prob
+    loss_pos_neg = logits - torch.log(torch.sum(torch.exp(logits), dim=1, keepdim=True))  # 分子マイナス分母
+    loss_pos = loss_pos_neg*label
+    # 1つのインスタンスに対する正例について平均
+    loss_instance = -1 * loss_pos.sum(dim=1) / label.sum(dim=1)
+    # バッチ内で平均 (先行研究の論文では，ここは総和になっている)
+    loss_batch = loss_instance.mean()
+    return loss_batch
+
+
 def calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features, 
                                 temperature, weights, criterions, labels, loss_type, ce_bce, epoch):
+    
     # 変数をほぐす
     criterion_CE, criterion_BCE = criterions
     pair_labels, img_labels, tag_labels = labels
@@ -28,7 +43,7 @@ def calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features,
     elif loss_type=='label_and': 
         and_labels = img_labels*tag_labels
         img_labels = tag_labels = and_labels
-    
+
     # culuculate loss_img, loss_tag
     if ce_bce=='CE':
         # CEの場合は，ラベルをソフトラベルに変換
@@ -39,7 +54,10 @@ def calc_hierarchical_clip_loss(embedded_img_features, embedded_tag_features,
     elif ce_bce=='BCE':
         loss_img = criterion_BCE(logits_per_img, tag_labels)    # 画像から印象のロス
         loss_tag = criterion_BCE(logits_per_tag, img_labels)    # 印象から画像のロス
-    
+    elif ce_bce=='SupCon':
+        loss_img = SupConLoss(logits_per_img, tag_labels)
+        loss_tag = SupConLoss(logits_per_tag, img_labels)
+
     # culuculate loss_total
     loss_total = w_pair*loss_pair + w_img*loss_img + w_tag*loss_tag
     loss_dict = {
@@ -88,7 +106,10 @@ def calc_hierarchical_clip_loss_eval(embedded_img_features, embedded_tag_feature
         elif ce_bce=='BCE':
             loss_img = criterion_BCE(logits_per_img, tag_labels)    # 画像から印象のロス
             loss_tag = criterion_BCE(logits_per_tag, img_labels)    # 印象から画像のロス
-        
+        elif ce_bce=='SupCon':
+            loss_img = SupConLoss(logits_per_img, tag_labels)
+            loss_tag = SupConLoss(logits_per_tag, img_labels)
+
         loss_total = w_pair*loss_pair + w_img*loss_img + w_tag*loss_tag
         loss_dict = {
             'total': loss_total.item(), 

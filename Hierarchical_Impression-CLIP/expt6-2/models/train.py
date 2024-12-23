@@ -207,13 +207,14 @@ if __name__ == '__main__':
                 'values': ['average']
             },
             'ce_bce':{
-                'values': ['BCE']
+                'values': ['SupCon']
             },
             'random_seed':{
-                'values': [4]
+                'values': [1, 2, 3, 4, 5]
             },
             'weights': {
-                'values': ['[1.0, 0.0, 0.0]']
+                'values': ['[1.0, 0.5, 0.5]',
+                           '[0.5, 1.0, 1.0]']
             },
         }
     }
