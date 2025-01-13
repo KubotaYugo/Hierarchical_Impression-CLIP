@@ -1,4 +1,5 @@
 import torch
+from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 import wandb
 import json
@@ -17,6 +18,18 @@ from lib import utils
 
 def main(params):
     with wandb.init(dir=f'{params.expt}/co-embedding'):
+
+        # GPU config
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()  
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = True 
+        torch.backends.cuda.matmul.allow_tf32 = True
+
+        # AMP用のスケーラーを作成
+        scaler = GradScaler()
+
         # parameter from config
         config = wandb.config
         EXPT = config.expt
@@ -34,14 +47,16 @@ def main(params):
         RUN_NAME = f'{LOSS_TYPE}_W={WEIGHTS}_BS={BATCH_SIZE}_seed={RANDOM_SEED}'
         SAVE_DIR = f'{EXPT}/co-embedding/{RUN_NAME}/results'
         os.makedirs(f'{SAVE_DIR}/model', exist_ok=True)
-
+        os.makedirs(f'{SAVE_DIR}/embedded_img_feature/train', exist_ok=True)
+        os.makedirs(f'{SAVE_DIR}/embedded_tag_feature/train', exist_ok=True)
+        os.makedirs(f'{SAVE_DIR}/embedded_img_feature/val', exist_ok=True)
+        os.makedirs(f'{SAVE_DIR}/embedded_tag_feature/val', exist_ok=True)
+        
         # set run name
         wandb.run.name = RUN_NAME
 
-        # fix random numbers, set cudnn option
+        # fix random numbers
         utils.fix_seed(RANDOM_SEED)
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
 
         # set MLPs and learnable temperture parameter
         device = torch.device('cuda:0')
@@ -74,18 +89,23 @@ def main(params):
         earlystopping = train_utils.EarlyStopping(patience=EARLY_STOPPING_PATIENCE, delta=0)
 
         # train and save results
-        meanARR_best = np.Inf
+        val_loss_best = np.Inf
         for epoch in range(1, MAX_EPOCH + 1):
             print('-'*130)
             print('Epoch {}/{}'.format(epoch, MAX_EPOCH))
 
             # training and validation
             loss, layer_loss_img2tag, layer_loss_tag2img = \
-                train_utils.train(trainloader, emb_img, emb_tag, temperature, WEIGHTS, LOSS_TYPE, optimizer)
-            loss_without_temperature_train, loss_with_temperature_train, ARR_train = \
+                train_utils.train(trainloader, emb_img, emb_tag, temperature, WEIGHTS, LOSS_TYPE, optimizer, scaler)
+            loss_without_temperature_train, loss_with_temperature_train, ARR_train, embedded_feature_train = \
                 train_utils.val(trainloader_eval, emb_img, emb_tag, temperature)
-            loss_without_temperature_val, loss_with_temperature_val, ARR_val = \
+            loss_without_temperature_val, loss_with_temperature_val, ARR_val, embedded_feature_val = \
                 train_utils.val(valloader, emb_img, emb_tag, temperature)
+    
+            # save embedded feature
+            if epoch%50==0 or epoch==1:
+                train_utils.save_embedded_feature(embedded_feature_train, SAVE_DIR, 'train', epoch)
+                train_utils.save_embedded_feature(embedded_feature_val, SAVE_DIR, 'val', epoch)
         
             print(f'[train]                     {train_utils.loss_format_train(loss)}')
             print(f'[train_all w/  temperature] {train_utils.loss_format_eval(loss_with_temperature_train)}')
@@ -126,7 +146,7 @@ def main(params):
             utils.save_list_to_csv([list(parameters_to_save.values())], f'{SAVE_DIR}/result.csv')
 
             # early stopping
-            earlystopping(ARR_val['mean'])
+            earlystopping(loss_without_temperature_val['pair'])
             if earlystopping.early_stop:
                 print('Early stopping')
                 train_utils.save_models(f'{SAVE_DIR}/model/checkpoint_{epoch:04d}.pth.tar', emb_img, emb_tag, temperature)
@@ -136,12 +156,12 @@ def main(params):
             if epoch%100==0 and epoch!=0:
                 train_utils.save_models(f'{SAVE_DIR}/model/checkpoint_{epoch:04d}.pth.tar', emb_img, emb_tag, temperature)
             
-            # save models if renew the best meanARR
-            if ARR_val['mean']<meanARR_best:
+            # save models if renew the val_loss_best
+            if loss_without_temperature_val['pair']<val_loss_best:
                 train_utils.save_models(f'{SAVE_DIR}/model/best.pth.tar', emb_img, emb_tag, temperature)
-                meanARR_best = ARR_val['mean']
+                val_loss_best = loss_without_temperature_val['pair']
         
-        wandb.log({'meanARR_val_min':meanARR_best}, step=epoch)
+        wandb.log({'loss_pair_without_temperature_val_min':val_loss_best}, step=epoch)
         wandb.alert(title='WandBからの通知', text=f'{RUN_NAME}が終了しました．')
 
 
@@ -153,7 +173,7 @@ if __name__ == '__main__':
         'name': params.expt.replace('/', '_'),
         'metric': {
             'goal': 'minimize',
-            'name': 'meanARR_val_min',
+            'name': 'loss_pair_without_temperature_val_min',
         },
         'parameters': {
             'expt': {
@@ -169,7 +189,7 @@ if __name__ == '__main__':
                 'values': ['[1e-4, 1e-4, 1e-4]']
             },
             'batch_size': {
-                'values': [2048, 4096]
+                'values': [8192]
             },
             'tag_preprocess':{
                 'values': ['average_single_tag']
@@ -178,17 +198,17 @@ if __name__ == '__main__':
                 'values': [0.15]
             },
             'loss_type':{
-                'values': ['BCE']
+                'values': ['SupCon']
             },
             'weights': {
                 'values': ['[1.0, 1.0]']
             },
             'random_seed':{
-                'values': [1, 2]
+                'values': [1]
             },
         }
     }
-    sweep_id = wandb.sweep(sweep=sweep_configuration, project='Hierarchical_ImpressionCLIP_6-2-2')
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project='Hierarchical_ImpressionCLIP_7-1-2')
     wandb.agent(sweep_id, function=lambda: main(params))
 
-# python programs/Hierarchical_Impression-CLIP/expt6-2-2/models/train.py
+# python programs/Hierarchical_Impression-CLIP/expt7-1-2/models/train.py

@@ -32,7 +32,8 @@ fontnames = utils.get_fontnames(DATASET)
 tags = [utils.get_font_tags(tag_path) for tag_path in tag_paths]
 write_rows = []
 for i in range(len(tag_cluster_id_marge)):
-    write_row = [tag_cluster_id_marge[i], fontnames[i]] + tags[i]
+    # write_row = [tag_cluster_id_marge[i], fontnames[i]] + tags[i]
+    write_row = [tag_cluster_id_marge[i]] + tags[i]
     write_rows.append(write_row)
 
 sorted_rows = [x for _, x in sorted(zip(tag_cluster_id_marge, write_rows))]

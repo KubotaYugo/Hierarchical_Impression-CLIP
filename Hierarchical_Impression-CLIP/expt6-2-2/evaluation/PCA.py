@@ -92,7 +92,7 @@ fig, ax = plt.subplots(figsize=(16, 12))
 plt.scatter(X[:t], Y[:t], c='#377eb8', label='img', alpha=0.8, s=1)
 plt.scatter(X[t:], Y[t:], c='#ff7f00', label='tag', alpha=0.8, s=1)
 plt.legend()
-plt.xlim(X.min(), X.max())
+plt.xlim(X.min(), X.max())ロス計算
 plt.ylim(Y.min(), Y.max())
 plt.xlabel('PC1')
 plt.ylabel('PC2')

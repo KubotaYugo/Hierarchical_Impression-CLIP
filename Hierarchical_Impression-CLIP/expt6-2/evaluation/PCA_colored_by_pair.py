@@ -3,10 +3,6 @@
 画像特徴: 自身のy座標で色付け
 印象特徴: ペアの画像特徴y座標で色付け
 '''
-import torch
-import torch.nn.parallel
-import torch.optim
-import torch.utils.data
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle

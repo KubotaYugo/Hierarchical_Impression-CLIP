@@ -11,7 +11,7 @@ def get_parameters():
         'expt':                     'Hierarchical_Impression-CLIP/expt6-2-2',
         'fontautoencoder_path':     'FontAutoencoder/model/best.pt',
         'max_epoch':                 10000,                 # 固定
-        'early_stopping_patience':   200,                   # 固定
+        'early_stopping_patience':   500,                   # 固定
         'learning_rate':             [1e-4, 1e-4, 1e-4],    # 固定  emb_img, emb_tag, temperatureの学習率
         'batch_size':                8192,                  # 固定
         'tag_preprocess':           'average_single_tag',   # 固定
@@ -19,7 +19,7 @@ def get_parameters():
         'loss_type':                ['SupCon', 'BCE'][0],
         'weights':                  [1.0, 1.0],             # w_img2tag, w_tag2img 
         'random_seed':              [1, 2, 3, 4, 5][0],
-        'dataset':                  ['train', 'val', 'test'][1],
+        'dataset':                  ['train', 'val', 'test'][0],
     }
     params = DotMap(params)
 
@@ -47,7 +47,7 @@ def get_parameters():
 
     params.base_dir = f'{params.expt}/co-embedding/{params.loss_type}_W={params.weights}_BS={params.batch_size}_seed={params.random_seed}'
     params.model_path = f'{params.base_dir}/results/model/best.pth.tar'
-    
+
     params.img_feature_path = f'{params.expt}/feature/img_feature/{params.dataset}.pth'
     params.tag_feature_path = f'{params.expt}/feature/tag_feature/{params.tag_preprocess}/{params.dataset}.pth'
     params.single_tag_feature_path = f'{params.expt}/feature/tag_feature/single_tag/{params.dataset}.pth'
@@ -58,6 +58,13 @@ def get_parameters():
     params.embedded_img_feature_path = f'{params.base_dir}/feature/embedded_img_feature/{params.dataset}.pth'
     params.embedded_tag_feature_path = f'{params.base_dir}/feature/embedded_tag_feature/{params.dataset}.pth'
     params.embedded_single_tag_feature_path = f'{params.base_dir}/feature/embedded_single_tag_feature/{params.dataset}.pth'
+
+    # クラスタの学習を入れずに学習した場合 (ベースライン)
+    params.base_dir_baseline = 'Hierarchical_Impression-CLIP/expt6-2/co-embedding/C=[10, 10]_average_single_tag_ExpMultiplierLogit_True_0.15_average_BCE_W=[1.0, 0.0, 0.0]_seed=1'
+    params.model_path_baseline = f'{params.base_dir_baseline}/results/model/best.pth.tar'
+    params.embedded_img_feature_path_baseline = f'{params.base_dir_baseline}/feature/embedded_img_feature/{params.dataset}.pth'
+    params.embedded_tag_feature_path_baseline = f'{params.base_dir_baseline}/feature/embedded_tag_feature/{params.dataset}.pth'
+    params.embedded_single_tag_feature_path_baseline = f'{params.base_dir_baseline}/feature/embedded_single_tag_feature/{params.dataset}.pth'
 
     # for key, value in params.items():
     #     print(f"{key}: {value}")
