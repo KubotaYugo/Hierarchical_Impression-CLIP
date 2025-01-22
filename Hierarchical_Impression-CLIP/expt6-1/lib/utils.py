@@ -17,8 +17,8 @@ def get_parameters():
         'learning_rate':             1e-4,      # 固定
         'batch_size':                8192,      # 固定
         'weights':                  [1.0, 1.0, 1.0],
-        'dataset':                  ['train', 'val', 'test'][2],
-        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][1],
+        'dataset':                  ['train', 'val', 'test'][0],
+        'tag_preprocess':           ['normal', 'average_single_tag', 'average_upto_10', 'single_tag'][0],
         'loss_type':                ['average', 'iterative', 'label_and'][1],
         'ce_bce':                   ['CE', 'BCE'][1],
         'temperature':              ['ExpMultiplier', 'ExpMultiplierLogit'][1],
